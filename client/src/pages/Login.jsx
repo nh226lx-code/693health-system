@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import "./Home.css"; // 如果你原来有样式就保留
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -8,22 +7,17 @@ export default function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (isLogin) {
-      alert("登录成功（演示）");
-    } else {
-      alert("注册成功（演示）");
-    }
+    alert(isLogin ? "登录成功（演示）" : "注册成功（演示）");
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        {/* 标题切换 */}
-        <h1>{isLogin ? "登录系统" : "用户注册"}</h1>
+    <div style={styles.page}>
+      <div style={styles.card}>
+        <h1 style={styles.title}>{isLogin ? "登录系统" : "用户注册"}</h1>
 
         <form onSubmit={handleSubmit}>
           <input
+            style={styles.input}
             type="text"
             placeholder="邮箱"
             value={email}
@@ -31,33 +25,87 @@ export default function Login() {
           />
 
           <input
+            style={styles.input}
             type="password"
             placeholder="密码"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          {/* 按钮切换 */}
-          <button type="submit">
+          <button style={styles.button} type="submit">
             {isLogin ? "登录" : "注册"}
           </button>
         </form>
 
-        {/* 切换文字 */}
-        <p style={{ marginTop: "15px", color: "#ccc" }}>
+        <p style={styles.text}>
           {isLogin ? "没有账号？" : "已有账号？"}
-          <span
-            style={{
-              color: "#4a6cf7",
-              cursor: "pointer",
-              marginLeft: "6px"
-            }}
-            onClick={() => setIsLogin(!isLogin)}
-          >
-            {isLogin ? "去注册" : "去登录"}
+          <span style={styles.link} onClick={() => setIsLogin(!isLogin)}>
+            {isLogin ? " 去注册" : " 去登录"}
           </span>
         </p>
       </div>
     </div>
   );
 }
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "linear-gradient(135deg, #020b2d 0%, #04174d 100%)",
+    padding: "20px",
+  },
+  card: {
+    width: "100%",
+    maxWidth: "460px",
+    background: "rgba(24, 34, 68, 0.95)",
+    borderRadius: "24px",
+    padding: "40px 32px 28px",
+    boxShadow: "0 18px 40px rgba(0,0,0,0.28)",
+  },
+  title: {
+    color: "#fff",
+    fontSize: "34px",
+    fontWeight: 800,
+    textAlign: "center",
+    margin: "0 0 28px",
+  },
+  input: {
+    width: "100%",
+    boxSizing: "border-box",
+    height: "58px",
+    borderRadius: "18px",
+    border: "2px solid #cfd5df",
+    background: "#f4f5f7",
+    padding: "0 22px",
+    fontSize: "18px",
+    color: "#333",
+    marginBottom: "18px",
+    outline: "none",
+  },
+  button: {
+    width: "100%",
+    height: "58px",
+    borderRadius: "18px",
+    border: "none",
+    background: "#3367e8",
+    color: "#fff",
+    fontSize: "18px",
+    fontWeight: 700,
+    cursor: "pointer",
+    marginTop: "6px",
+  },
+  text: {
+    marginTop: "16px",
+    textAlign: "center",
+    color: "#cfd5df",
+    fontSize: "15px",
+  },
+  link: {
+    color: "#7ea2ff",
+    cursor: "pointer",
+    fontWeight: 700,
+  },
+};
