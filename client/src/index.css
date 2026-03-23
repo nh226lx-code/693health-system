@@ -1,0 +1,18 @@
+/* 重置所有默认样式（关键） */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 防止页面横向炸开 */
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+  font-family: Arial, sans-serif;
+}
+
+/* React 根节点必须正常撑开 */
+#root {
+  width: 100%;
+}
