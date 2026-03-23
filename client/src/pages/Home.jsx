@@ -32,7 +32,7 @@ const Home = () => {
         return;
       }
 
-      const res = await fetch('http://localhost:5000/api/health', {
+      const res = await fetch('https://six93health-system.onrender.com/api/health', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
