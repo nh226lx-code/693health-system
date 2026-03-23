@@ -1,87 +1,39 @@
 import React, { useState } from "react";
-import API from "../services/api";
-import { Link } from "react-router-dom";
 
 export default function Register() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleRegister = async () => {
-    try {
-      await API.post("/auth/register", { email, password });
-      alert("注册成功");
-    } catch {
-      alert("注册失败");
-    }
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    alert("注册成功（测试）");
   };
 
   return (
-    <div style={{
-      height: "100vh",
-      display: "flex",
-      background: "linear-gradient(135deg,#0f172a,#1e293b)"
-    }}>
-      {/* 左侧视觉区 */}
-      <div style={{
-        flex: 1,
-        color: "white",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        padding: 60
-      }}>
-        <h1 style={{ fontSize: 42, marginBottom: 20 }}>
-          健康管理平台
-        </h1>
-        <p style={{ fontSize: 18, color: "#cbd5f5" }}>
-          创建账号，开始你的健康数据管理之旅。
-        </p>
-      </div>
+    <div style={{ padding: "40px" }}>
+      <h2>注册</h2>
 
-      {/* 右侧表单 */}
-      <div style={{
-        width: 420,
-        background: "white",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        padding: 40
-      }}>
-        <h2 style={{ marginBottom: 20 }}>注册账号</h2>
-
-        <input
-          style={{ padding: 12, marginBottom: 15, borderRadius: 8, border: "1px solid #ddd" }}
-          placeholder="邮箱"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <input
-          type="password"
-          style={{ padding: 12, marginBottom: 20, borderRadius: 8, border: "1px solid #ddd" }}
-          placeholder="密码"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <button
-          onClick={handleRegister}
-          style={{
-            padding: 12,
-            background: "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: 8,
-            fontWeight: 600
-          }}
-        >
-          注册
-        </button>
-
-        <div style={{ marginTop: 15 }}>
-          <Link to="/">已有账号？去登录</Link>
+      <form onSubmit={handleSubmit}>
+        <div style={{ marginBottom: "10px" }}>
+          <input
+            type="text"
+            placeholder="用户名"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
         </div>
-      </div>
+
+        <div style={{ marginBottom: "10px" }}>
+          <input
+            type="password"
+            placeholder="密码"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+
+        <button type="submit">注册</button>
+      </form>
     </div>
   );
 }
