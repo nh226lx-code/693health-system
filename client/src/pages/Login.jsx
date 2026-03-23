@@ -23,12 +23,19 @@ export default function Login() {
   };
 
   const handleRegister = () => {
+    if (!email || !password || !confirm) {
+      alert("请填写完整信息");
+      return;
+    }
+
     if (password !== confirm) {
       alert("两次密码不一致");
       return;
     }
+
     alert("注册成功");
     setIsLogin(true);
+    setConfirm("");
   };
 
   return (
@@ -46,6 +53,7 @@ export default function Login() {
         <h2>{isLogin ? "登录系统" : "用户注册"}</h2>
 
         <input
+          type="text"
           placeholder="邮箱"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
