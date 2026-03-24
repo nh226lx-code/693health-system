@@ -34,8 +34,8 @@ export default function Dashboard() {
         id: item._id || index + 1,
         index: index + 1,
         steps: Number(item.steps) || 0,
-        sleepHours: Number(item.sleepHours) || 0,
-        waterIntake: Number(item.waterIntake) || 0,
+        sleepHours: Number(item.sleep) || 0,
+        waterIntake: Number(item.water) || 0,
         weight: Number(item.weight) || 0,
         date: item.date
           ? item.date
