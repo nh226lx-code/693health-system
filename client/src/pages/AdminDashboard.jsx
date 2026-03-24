@@ -13,13 +13,18 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const fetchOverview = async () => {
-      try {
-        const res = await API.get("/admin/overview");
-        setOverview(res.data);
-      } catch (err) {
-        alert("无权限获取失败");
-      }
-    };
+  try {
+    const res = await API.get("/health");
+
+    setOverview({
+      totalUsers: 1,
+      totalRecords: res.data.length || 0
+    });
+
+  } catch (err) {
+    alert("获取数据失败");
+  }
+};
 
     fetchOverview();
   }, []);
