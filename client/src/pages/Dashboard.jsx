@@ -684,7 +684,7 @@ const chartData = useMemo(() => {
                   padding: 14
                 }}
               >
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="300">
                   <LineChart
                     data={chartData}
                     margin={{ top: 10, right: 12, left: 0, bottom: 6 }}

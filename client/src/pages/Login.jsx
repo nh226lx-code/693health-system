@@ -11,14 +11,14 @@ export default function Login() {
   const handleLogin = async () => {
   try {
     const res = await API.post("/auth/login", { email, password });
-    
+
     console.log(res.data)
 
     localStorage.setItem("token", res.data.token);
     localStorage.setItem("role", res.data.role);
 
     if (res.data.role === "admin") {
-      navigate("/admin-dashboard");
+      navigate("/admin");
     } else {
       navigate("/dashboard");
     }

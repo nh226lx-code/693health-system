@@ -18,7 +18,7 @@ export default function AdminDashboard() {
 
         setOverview({
           totalUsers: 1,
-          totalRecords: res.data.length || 0
+          totalRecords: Array.isArray(res.data) ? res.data.length : 0
         });
       } catch {
         setOverview({
