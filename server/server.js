@@ -36,7 +36,11 @@ app.post("/api/health", (req, res) => {
 })
 
 app.get("/api/health", (req, res) => {
-  const sortedData = [...healthData].sort((a, b) => new Date(b.date) - new Date(a.date))
+  const sortedData = [...healthData].sort((a, b) => {
+    if (a.date < b.date) return 1
+    if (a.date > b.date) return -1
+    return 0
+  })
   res.json(sortedData)
 })
 

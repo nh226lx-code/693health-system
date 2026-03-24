@@ -641,7 +641,7 @@ export default function Dashboard() {
                     boxShadow: "0 12px 26px rgba(37,99,235,0.24)"
                   }}
                 >
-                  提交今日健康数据
+                  提交健康数据
                 </button>
               </div>
             </div>
