@@ -7,8 +7,8 @@ export default function AdminRecords() {
 
   const fetchRecords = async () => {
     try {
-      // ✅ 改这里（避免白屏）
-      const res = await API.get("/api/health");
+     
+      const res = await API.get("/health");
 
       const list = res.data.map((item, i) => ({
         _id: i,
