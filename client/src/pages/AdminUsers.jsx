@@ -32,7 +32,6 @@ export default function AdminUsers() {
     fetchUsers();
   }, []);
 
-  // ✅ 删除功能（只新增这个函数）
   const handleDelete = (id) => {
     const ok = window.confirm("确定删除该用户？");
     if (!ok) return;
@@ -40,7 +39,6 @@ export default function AdminUsers() {
     setUsers(users.filter((u) => u._id !== id));
   };
 
-  // 搜索（保持你原逻辑）
   const filtered = users.filter((u) =>
     u.email.toLowerCase().includes(keyword.toLowerCase())
   );
@@ -88,24 +86,25 @@ export default function AdminUsers() {
             style={{
               width: "100%",
               borderCollapse: "collapse",
-              tableLayout: "fixed"
+              tableLayout: "fixed",
+              textAlign: "center" // ✅ 只加这一行（居中）
             }}
           >
             <thead>
               <tr style={{ background: "#f8fafc" }}>
-                <th style={{ padding: 14 }}>邮箱</th>
-                <th style={{ padding: 14 }}>角色</th>
-                <th style={{ padding: 14 }}>用户ID</th>
-                <th style={{ padding: 14 }}>操作</th> {/* ✅ 只新增这一列 */}
+                <th style={{ padding: 14, textAlign: "center" }}>邮箱</th>
+                <th style={{ padding: 14, textAlign: "center" }}>角色</th>
+                <th style={{ padding: 14, textAlign: "center" }}>用户ID</th>
+                <th style={{ padding: 14, textAlign: "center" }}>操作</th>
               </tr>
             </thead>
 
             <tbody>
               {filtered.map((user) => (
                 <tr key={user._id} style={{ borderBottom: "1px solid #eef2f7" }}>
-                  <td style={{ padding: 14 }}>{user.email}</td>
+                  <td style={{ padding: 14, textAlign: "center" }}>{user.email}</td>
 
-                  <td style={{ padding: 14 }}>
+                  <td style={{ padding: 14, textAlign: "center" }}>
                     <span
                       style={{
                         padding: "6px 12px",
@@ -122,10 +121,9 @@ export default function AdminUsers() {
                     </span>
                   </td>
 
-                  <td style={{ padding: 14 }}>{user._id}</td>
+                  <td style={{ padding: 14, textAlign: "center" }}>{user._id}</td>
 
-                  {/* ✅ 删除按钮（只新增这个） */}
-                  <td style={{ padding: 14 }}>
+                  <td style={{ padding: 14, textAlign: "center" }}>
                     {user.role !== "admin" && (
                       <button
                         onClick={() => handleDelete(user._id)}
