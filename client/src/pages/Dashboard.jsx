@@ -65,15 +65,17 @@ export default function Dashboard() {
       ? (latest.weight / (1.7 * 1.7)).toFixed(1)
       : "--";
 
-  const chartData = useMemo(() => {
-    return records.map((item) => ({
+const chartData = useMemo(() => {
+  return [...records]
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .map((item) => ({
       日期: item.date,
       步数: item.steps,
       睡眠: item.sleepHours,
       饮水: item.waterIntake,
       体重: item.weight
     }));
-  }, [records]);
+}, [records]);
 
   const analysis = useMemo(() => {
     if (!latest) {
