@@ -25,16 +25,13 @@ const Home = () => {
             </div>
             <div className="logo-text">
               <h1>693智能健康监测系统</h1>
-              <p>Smart Health Monitoring & Data Analysis Platform</p>
+              <p>Smart Health Monitoring & Analysis Platform</p>
             </div>
           </div>
 
           <nav className="nav-bar">
             <button onClick={() => navigate('/')} className="nav-item active">
               <i className="fas fa-home"></i> 首页
-            </button>
-            <button onClick={() => navigate('/admin')} className="nav-item">
-              <i className="fas fa-cog"></i> 管理后台
             </button>
           </nav>
         </div>
