@@ -244,21 +244,27 @@ const chartData = useMemo(() => {
   };
 
   const thStyle = {
-    padding: "14px 16px",
-    textAlign: "left",
-    fontSize: 14,
-    fontWeight: 800,
-    color: "#1e3a8a",
-    borderBottom: "1px solid #dbeafe",
-    background: "#eff6ff"
-  };
+  padding: "14px 16px",
+  textAlign: "center",
+  fontSize: 14,
+  fontWeight: 800,
+  color: "#1e3a8a",
+  borderBottom: "1px solid #dbeafe",
+  background: "#eff6ff",
+  width: "20%"
+};
 
   const tdStyle = {
-    padding: "14px 16px",
-    fontSize: 14,
-    color: "#334155",
-    borderBottom: "1px solid #eef2f7"
-  };
+  padding: "14px 16px",
+  fontSize: 14,
+  color: "#334155",
+  borderBottom: "1px solid #eef2f7",
+  textAlign: "center",
+  width: "20%",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis"
+};
 
   return (
     <div
@@ -784,11 +790,13 @@ const chartData = useMemo(() => {
             }}
           >
             <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse"
-              }}
-            >
+  style={{
+    width: "100%",
+    borderCollapse: "collapse",
+    tableLayout: "fixed"
+  }}
+>
+          
               <thead>
                 <tr>
                   <th style={thStyle}>日期</th>
