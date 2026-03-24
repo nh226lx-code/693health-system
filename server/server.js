@@ -36,7 +36,8 @@ app.post("/api/health", (req, res) => {
 })
 
 app.get("/api/health", (req, res) => {
-  res.json(healthData)
+  const sortedData = [...healthData].sort((a, b) => new Date(b.date) - new Date(a.date))
+  res.json(sortedData)
 })
 
 app.use(express.static(path.join(__dirname, "../client/dist")))
