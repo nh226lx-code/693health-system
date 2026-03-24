@@ -38,7 +38,7 @@ app.post("/api/auth/login", (req, res) => {
   return res.json({ token: "ok", role: "user" })
 })
 
-//
+
 app.post("/api/health", async (req, res) => {
   const date = new Date(
     req.body.date || req.body.recordDate || new Date()

@@ -11,13 +11,13 @@ export default function AdminRecords() {
       const res = await API.get("/health");
 
       const list = res.data.map((item, i) => ({
-        _id: i,
-        userId: "用户" + (i + 1),
-        steps: item.steps || 0,
-        sleepHours: item.sleep || 0,
-        waterIntake: item.water || 0,
-        weight: item.weight || 0
-      }));
+  _id: i,
+  userId: item.user || "unknown",
+  steps: item.steps || 0,
+  sleepHours: item.sleep || 0,
+  waterIntake: item.water || 0,
+  weight: item.weight || 0
+}));
 
       setRecords(list);
     } catch {

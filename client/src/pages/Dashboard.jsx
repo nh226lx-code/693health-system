@@ -151,13 +151,14 @@ const chartData = useMemo(() => {
     }
 
     try {
-      await API.post("/health", {
-        steps: Number(form.steps),
-        sleep: Number(form.sleepHours),
-        water: Number(form.waterIntake),
-        weight: Number(form.weight),
-        date: form.date
-      });
+     await API.post("/health", {
+  user: localStorage.getItem("user") || "guest",
+  steps: Number(form.steps),
+  sleep: Number(form.sleepHours),
+  water: Number(form.waterIntake),
+  weight: Number(form.weight),
+  date: form.date
+});
 
       setForm({
         steps: "",
