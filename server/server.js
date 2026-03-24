@@ -1,6 +1,11 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const mongoose = require("mongoose");
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch(() => console.log("MongoDB error"));
 
 const app = express();
 
@@ -17,9 +22,7 @@ app.get("/api/health", (req, res) => {
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
 app.get("*", (req, res) => {
-  if (req.path.startsWith("/api")) {
-    return res.status(404).end();
-  }
+  if (req.path.startsWith("/api")) return res.status(404).end();
   res.sendFile(path.join(__dirname, "../client/dist/index.html"));
 });
 
