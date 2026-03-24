@@ -9,7 +9,6 @@ export default function AdminUsers() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        // ✅ 改这里（避免白屏）
         const res = await API.get("/health");
 
         const list = res.data.map((item, i) => ({
@@ -18,7 +17,6 @@ export default function AdminUsers() {
           role: "user"
         }));
 
-        // 👉 插入管理员账号
         list.unshift({
           _id: "admin",
           email: "test@admin.com",
@@ -34,7 +32,15 @@ export default function AdminUsers() {
     fetchUsers();
   }, []);
 
-  // ✅ 搜索（按邮箱）
+  // ✅ 删除功能（只新增这个函数）
+  const handleDelete = (id) => {
+    const ok = window.confirm("确定删除该用户？");
+    if (!ok) return;
+
+    setUsers(users.filter((u) => u._id !== id));
+  };
+
+  // 搜索（保持你原逻辑）
   const filtered = users.filter((u) =>
     u.email.toLowerCase().includes(keyword.toLowerCase())
   );
@@ -57,7 +63,6 @@ export default function AdminUsers() {
           </h2>
         </div>
 
-        {/* 搜索框（轻微增强，不破UI） */}
         <input
           placeholder="按邮箱搜索"
           value={keyword}
@@ -91,6 +96,7 @@ export default function AdminUsers() {
                 <th style={{ padding: 14 }}>邮箱</th>
                 <th style={{ padding: 14 }}>角色</th>
                 <th style={{ padding: 14 }}>用户ID</th>
+                <th style={{ padding: 14 }}>操作</th> {/* ✅ 只新增这一列 */}
               </tr>
             </thead>
 
@@ -117,6 +123,25 @@ export default function AdminUsers() {
                   </td>
 
                   <td style={{ padding: 14 }}>{user._id}</td>
+
+                  {/* ✅ 删除按钮（只新增这个） */}
+                  <td style={{ padding: 14 }}>
+                    {user.role !== "admin" && (
+                      <button
+                        onClick={() => handleDelete(user._id)}
+                        style={{
+                          background: "#ef4444",
+                          color: "#fff",
+                          border: "none",
+                          padding: "6px 12px",
+                          borderRadius: 6,
+                          cursor: "pointer"
+                        }}
+                      >
+                        删除
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

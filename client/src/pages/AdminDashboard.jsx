@@ -32,23 +32,18 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f7fa" }}>
+    <div style={{ background: "#f5f7fa", paddingBottom: 30 }}>
       <Topbar />
 
+      {/* ✅ 补回结构容器（不影响UI） */}
       <div style={{ padding: 30 }}>
-        {/* 标题 */}
-        <div style={{ marginBottom: 24 }}>
-          <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>
-            管理员控制台
-          </h2>
-        </div>
 
         {/* 三个卡片 */}
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 20,
+            gap: 16,
             marginBottom: 24
           }}
         >
@@ -112,7 +107,7 @@ export default function AdminDashboard() {
             gap: 20
           }}
         >
-          {/* 系统说明（保留你原UI风格） */}
+          {/* 系统说明 */}
           <div
             style={{
               background: "#fff",
@@ -180,6 +175,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );
