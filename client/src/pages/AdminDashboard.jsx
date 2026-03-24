@@ -14,7 +14,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await API.get("/health");
+        const res = await API.get("/api/health");
 
         setOverview({
           totalUsers: 1,
