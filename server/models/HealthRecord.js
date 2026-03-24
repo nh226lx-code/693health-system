@@ -11,4 +11,4 @@ const healthSchema = new mongoose.Schema({
   bmi: Number
 });
 
-module.exports = mongoose.model("HealthRecord", healthSchema);
+module.exports = mongoose.model("HealthRecord", healthSchema, "healthrecords");
