@@ -41,7 +41,6 @@ export default function Register() {
           overflow: "hidden"
         }}
       >
-        {/* 背景装饰 */}
         <div
           style={{
             position: "absolute",
@@ -62,7 +61,6 @@ export default function Register() {
             alignItems: "flex-start"
           }}
         >
-          {/* 左侧内容（完全一样） */}
           <div style={{ flex: 1 }}>
             <h1
               style={{
@@ -87,26 +85,23 @@ export default function Register() {
             </p>
 
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {["数据分析", "趋势图", "健康建议", "管理系统"].map(
-                (t, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      background: "#e0f2fe",
-                      color: "#0369a1",
-                      padding: "6px 12px",
-                      borderRadius: 20,
-                      fontSize: 12
-                    }}
-                  >
-                    {t}
-                  </span>
-                )
-              )}
+              {["数据分析", "趋势图", "健康建议", "管理系统"].map((t, i) => (
+                <span
+                  key={i}
+                  style={{
+                    background: "#e0f2fe",
+                    color: "#0369a1",
+                    padding: "6px 12px",
+                    borderRadius: 20,
+                    fontSize: 12
+                  }}
+                >
+                  {t}
+                </span>
+              ))}
             </div>
           </div>
 
-          {/* 注册框（只改这里） */}
           <div
             style={{
               width: 380,
@@ -118,7 +113,7 @@ export default function Register() {
             }}
           >
             <h2 style={{ textAlign: "center", marginBottom: 18 }}>
-              用户注册
+              注册系统
             </h2>
 
             <input
@@ -193,9 +188,56 @@ export default function Register() {
                   cursor: "pointer"
                 }}
               >
-                去登录
+                立即登录
               </span>
             </div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 50 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3,1fr)",
+              gap: 20
+            }}
+          >
+            {[
+              ["📊", "数据可视化"],
+              ["📋", "健康记录管理"],
+              ["🛡️", "管理后台系统"]
+            ].map(([icon, title], i) => (
+              <div
+                key={i}
+                style={{
+                  background: "#0f172a",
+                  color: "white",
+                  padding: "26px 28px",
+                  borderRadius: 18,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 18
+                }}
+              >
+                <div style={{ fontSize: 34 }}>{icon}</div>
+
+                <div>
+                  <div style={{ fontSize: 22, fontWeight: 600 }}>
+                    {title}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 14,
+                      color: "#94a3b8",
+                      marginTop: 4
+                    }}
+                  >
+                    专业级健康数据管理体验
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

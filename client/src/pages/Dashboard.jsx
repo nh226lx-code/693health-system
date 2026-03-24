@@ -481,19 +481,7 @@ const chartData = useMemo(() => {
                 </div>
               </div>
 
-              <div
-                style={{
-                  marginTop: 18,
-                  padding: 14,
-                  borderRadius: 14,
-                  background: "rgba(37,99,235,0.08)",
-                  color: "#1d4ed8",
-                  fontWeight: 700,
-                  fontSize: 14
-                }}
-              >
-                当前状态：{analysis.title}
-              </div>
+            
             </div>
           </div>
         </div>
