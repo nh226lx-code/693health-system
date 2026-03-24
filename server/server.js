@@ -9,12 +9,12 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-// ✅ 连接MongoDB
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.log(err))
 
-// ✅ 数据模型
+
 const HealthSchema = new mongoose.Schema({
   date: String,
   steps: Number,
@@ -25,7 +25,7 @@ const HealthSchema = new mongoose.Schema({
 
 const Health = mongoose.model("Health", HealthSchema)
 
-// ================= 登录 =================
+
 app.post("/api/auth/login", (req, res) => {
   const { username, email, password } = req.body
 
@@ -38,25 +38,30 @@ app.post("/api/auth/login", (req, res) => {
   return res.json({ token: "ok", role: "user" })
 })
 
-// ================= 保存数据 =================
+//
 app.post("/api/health", async (req, res) => {
-  const date =
-    req.body.date ||
-    req.body.recordDate ||
-    new Date().toISOString().slice(0, 10)
+  const date = new Date(
+    req.body.date || req.body.recordDate || new Date()
+  ).toISOString().slice(0, 10);
 
-  const newData = { ...req.body, date }
+  const newData = {
+    date,
+    steps: Number(req.body.steps) || 0,
+    sleep: Number(req.body.sleep) || 0,
+    water: Number(req.body.water) || 0,
+    weight: Number(req.body.weight) || 0,
+  };
 
   await Health.findOneAndUpdate(
     { date },
     newData,
     { upsert: true, new: true }
-  )
+  );
 
-  res.json({ message: "saved" })
-})
+  res.json({ message: "saved" });
+});
 
-// ================= 获取数据 =================
+
 app.get("/api/health", async (req, res) => {
   const data = await Health.find().sort({ date: -1 })
   res.json(data)
