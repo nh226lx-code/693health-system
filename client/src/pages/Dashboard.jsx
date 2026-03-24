@@ -153,8 +153,8 @@ const chartData = useMemo(() => {
     try {
       await API.post("/health", {
         steps: Number(form.steps),
-        sleepHours: Number(form.sleepHours),
-        waterIntake: Number(form.waterIntake),
+        sleep: Number(form.sleepHours),
+        water: Number(form.waterIntake),
         weight: Number(form.weight),
         date: form.date
       });
