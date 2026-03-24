@@ -1,7 +1,11 @@
 import React from "react";
 
 export default function Topbar() {
-  const role = localStorage.getItem("role");
+  let role = "user";
+  try {
+    const r = localStorage.getItem("role");
+    if (r) role = r;
+  } catch {}
 
   return (
     <div
