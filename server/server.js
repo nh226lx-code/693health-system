@@ -7,6 +7,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ✅ 加这一行
+app.use("/api/auth", require("./routes/authRoutes"));
+
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
 app.get("/api/health", (req, res) => {
