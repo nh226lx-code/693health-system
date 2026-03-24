@@ -3,9 +3,11 @@ const cors = require("cors");
 const path = require("path");
 const mongoose = require("mongoose");
 
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect("mongodb+srv://nh226lx_db_user:PwESjIbUfG1zW7Ct@cluster0.xwiv1xa.mongodb.net/health-system?retryWrites=true&w=majority")
   .then(() => console.log("MongoDB connected"))
   .catch(() => console.log("MongoDB error"));
+
+process.env.JWT_SECRET = "123456";
 
 const app = express();
 
