@@ -8,7 +8,7 @@ export default function AdminRecords() {
   const fetchRecords = async () => {
     try {
       // ✅ 改这里（避免白屏）
-      const res = await API.get("/health");
+      const res = await API.get("/api/health");
 
       const list = res.data.map((item, i) => ({
         _id: i,
@@ -79,7 +79,7 @@ export default function AdminRecords() {
                   <td style={{ padding: 14 }}>{item.sleepHours} 小时</td>
                   <td style={{ padding: 14 }}>{item.waterIntake} L</td>
                   <td style={{ padding: 14 }}>{item.weight} kg</td>
-                  <td style={{ padding: 14 }}>
+                  <td style={{ padding: 14, textAlign: "center" }}>
                     <button
                       onClick={() => handleDelete(item._id)}
                       style={{

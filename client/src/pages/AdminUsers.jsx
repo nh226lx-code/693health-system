@@ -11,17 +11,25 @@ export default function AdminUsers() {
       try {
         const res = await API.get("/health");
 
-        const list = res.data.map((item, i) => ({
-          _id: i,
-          email: "user" + (i + 1) + "@test.com",
-          role: "user"
-        }));
+        const unique = [];
+const seen = new Set();
 
-        list.unshift({
-          _id: "admin",
-          email: "test@admin.com",
-          role: "admin"
-        });
+res.data.forEach((item, i) => {
+  const email = item.email || "test@test.com";
+
+  if (!seen.has(email)) {
+    seen.add(email);
+    unique.push({
+      _id: email,
+      email: email,
+      role: "user"
+    });
+  }
+});
+
+const list = unique;
+
+        
 
         setUsers(list);
       } catch {
@@ -47,32 +55,38 @@ export default function AdminUsers() {
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
       <Topbar />
 
-      <div style={{ padding: 28 }}>
-        <div style={{ marginBottom: 20 }}>
-          <h2
-            style={{
-              margin: 0,
-              fontSize: 28,
-              fontWeight: 700,
-              color: "#0f172a"
-            }}
-          >
-            用户管理
-          </h2>
-        </div>
+     <div style={{ padding: 28 }}>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 20
+    }}
+  >
+    <h2
+      style={{
+        margin: 0,
+        fontSize: 28,
+        fontWeight: 700,
+        color: "#0f172a"
+      }}
+    >
+      用户管理
+    </h2>
 
-        <input
-          placeholder="按邮箱搜索"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          style={{
-            padding: 10,
-            marginBottom: 16,
-            width: 260,
-            borderRadius: 10,
-            border: "1px solid #e2e8f0"
-          }}
-        />
+    <input
+      placeholder="按邮箱搜索"
+      value={keyword}
+      onChange={(e) => setKeyword(e.target.value)}
+      style={{
+        padding: 10,
+        width: 260,
+        borderRadius: 10,
+        border: "1px solid #e2e8f0"
+      }}
+    />
+  </div>
 
         <div
           style={{
@@ -87,7 +101,7 @@ export default function AdminUsers() {
               width: "100%",
               borderCollapse: "collapse",
               tableLayout: "fixed",
-              textAlign: "center" // ✅ 只加这一行（居中）
+              textAlign: "center" 
             }}
           >
             <thead>
