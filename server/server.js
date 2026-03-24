@@ -17,6 +17,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 const HealthSchema = new mongoose.Schema({
   date: String,
+  user: String,  
   steps: Number,
   sleep: Number,
   water: Number,
@@ -45,20 +46,17 @@ app.post("/api/health", async (req, res) => {
   ).toISOString().slice(0, 10);
 
   const newData = {
-    date,
-    steps: Number(req.body.steps) || 0,
-    sleep: Number(req.body.sleep) || 0,
-    water: Number(req.body.water) || 0,
-    weight: Number(req.body.weight) || 0,
-  };
+  date,
+  user: req.body.user || "unknown", 
+  steps: Number(req.body.steps) || 0,
+  sleep: Number(req.body.sleep) || 0,
+  water: Number(req.body.water) || 0,
+  weight: Number(req.body.weight) || 0,
+};
 
-  await Health.findOneAndUpdate(
-    { date },
-    newData,
-    { upsert: true, new: true }
-  );
+  await Health.create(newData);
 
-  res.json({ message: "saved" });
+res.json({ message: "saved" });
 });
 
 
