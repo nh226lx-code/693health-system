@@ -14,14 +14,24 @@ app.post("/api/auth/login", (req, res) => {
 })
 
 app.post("/api/health", (req, res) => {
+  const date =
+    req.body.date ||
+    req.body.recordDate ||
+    new Date().toISOString().split("T")[0]
+
+  const exists = healthData.find(item => item.date === date)
+
+  if (exists) {
+    return res.status(400).json({ message: "already submitted" })
+  }
+
   const data = {
     ...req.body,
-    date:
-      req.body.date ||
-      req.body.recordDate ||
-      new Date().toISOString().split("T")[0]
+    date
   }
+
   healthData.push(data)
+
   res.json({ message: "saved" })
 })
 
