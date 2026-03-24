@@ -14,7 +14,13 @@ app.post("/api/auth/login", (req, res) => {
 })
 
 app.post("/api/health", (req, res) => {
-  const data = { ...req.body, date: new Date() }
+  const data = {
+    ...req.body,
+    date:
+      req.body.date ||
+      req.body.recordDate ||
+      new Date().toISOString().split("T")[0]
+  }
   healthData.push(data)
   res.json({ message: "saved" })
 })
