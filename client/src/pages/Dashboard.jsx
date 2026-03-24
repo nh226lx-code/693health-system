@@ -56,7 +56,9 @@ export default function Dashboard() {
     loadData();
   }, []);
 
-  const latest = records.length ? records[records.length - 1] : null;
+  const latest = records.length
+  ? [...records].sort((a, b) => new Date(b.date) - new Date(a.date))[0]
+  : null;
 
   const bmi =
     latest && latest.weight
@@ -787,7 +789,6 @@ export default function Dashboard() {
             >
               <thead>
                 <tr>
-                  <th style={thStyle}>序号</th>
                   <th style={thStyle}>日期</th>
                   <th style={thStyle}>步数</th>
                   <th style={thStyle}>睡眠</th>
@@ -799,7 +800,7 @@ export default function Dashboard() {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={5}
                       style={{
                         padding: 28,
                         textAlign: "center",
@@ -812,7 +813,7 @@ export default function Dashboard() {
                 ) : records.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={5}
                       style={{
                         padding: 28,
                         textAlign: "center",
@@ -823,17 +824,17 @@ export default function Dashboard() {
                     </td>
                   </tr>
                 ) : (
-                  records
-                    .slice()
-                    .reverse()
-                    .map((item, index) => (
+              [...records]
+               .sort((a, b) => new Date(b.date) - new Date(a.date))
+            
+  .map((item, index) => (
                       <tr
                         key={item.id || index}
                         style={{
                           background: index % 2 === 0 ? "#ffffff" : "#fafcff"
                         }}
                       >
-                        <td style={tdStyle}>{records.length - index}</td>
+
                         <td style={tdStyle}>{item.date}</td>
                         <td style={tdStyle}>{item.steps}</td>
                         <td style={tdStyle}>{item.sleepHours} h</td>
