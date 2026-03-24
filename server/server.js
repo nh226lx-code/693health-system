@@ -17,31 +17,29 @@ app.post("/api/health", (req, res) => {
   const date =
     req.body.date ||
     req.body.recordDate ||
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().slice(0, 10)
 
-  const exists = healthData.find(item => item.date === date)
+  const idx = healthData.findIndex(i => i.date === date)
 
-  if (exists) {
-    return res.status(400).json({ message: "already submitted" })
+  const data = { ...req.body, date }
+
+  if (idx !== -1) {
+    healthData[idx] = data
+  } else {
+    healthData.push(data)
   }
 
-  const data = {
-    ...req.body,
-    date
-  }
-
-  healthData.push(data)
+  healthData.sort((a, b) => {
+    if (a.date < b.date) return 1
+    if (a.date > b.date) return -1
+    return 0
+  })
 
   res.json({ message: "saved" })
 })
 
 app.get("/api/health", (req, res) => {
-  const sortedData = [...healthData].sort((a, b) => {
-    if (a.date < b.date) return 1
-    if (a.date > b.date) return -1
-    return 0
-  })
-  res.json(sortedData)
+  res.json(healthData)
 })
 
 app.use(express.static(path.join(__dirname, "../client/dist")))
