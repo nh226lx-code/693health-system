@@ -3,28 +3,37 @@ const cors = require("cors");
 const path = require("path");
 const mongoose = require("mongoose");
 
+const app = express();
+
 mongoose.connect("mongodb+srv://nh226lx_db_user:PwESjIbUfG1zW7Ct@cluster0.xwiv1xa.mongodb.net/health-system?retryWrites=true&w=majority")
   .then(() => console.log("MongoDB connected"))
   .catch(() => console.log("MongoDB error"));
 
-process.env.JWT_SECRET = "123456";
-
-const app = express();
-
 app.use(cors());
 app.use(express.json());
 
-const authRoutes = require("./routes/authRoutes");
-app.use("/api/auth", authRoutes);
+// ====== auth ======
+app.post("/api/auth/login", (req, res) => {
+  res.json({ token: "ok", role: "user" });
+});
 
+app.post("/api/auth/register", (req, res) => {
+  res.json("ok");
+});
+
+// ====== health（补上你缺的）=====
 app.get("/api/health", (req, res) => {
   res.json({ message: "ok" });
 });
 
+app.post("/api/health", (req, res) => {
+  res.json({ message: "saved", data: req.body });
+});
+
+// ====== 前端 ======
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
 app.get("*", (req, res) => {
-  if (req.path.startsWith("/api")) return res.status(404).end();
   res.sendFile(path.join(__dirname, "../client/dist/index.html"));
 });
 
