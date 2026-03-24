@@ -9,15 +9,22 @@ export default function Login() {
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
-    try {
-      const res = await API.post("/auth/login", { email, password });
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("role", res.data.role);
+  try {
+    const res = await API.post("/auth/login", { email, password });
+
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("role", res.data.role);
+
+    if (res.data.role === "admin") {
+      navigate("/admin-dashboard");
+    } else {
       navigate("/dashboard");
-    } catch {
-      alert("登录失败");
     }
-  };
+
+  } catch {
+    alert("登录失败");
+  }
+};
 
   return (
     <div
