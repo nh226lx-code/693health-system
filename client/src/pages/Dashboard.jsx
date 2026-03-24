@@ -152,7 +152,7 @@ const chartData = useMemo(() => {
 
     try {
      await API.post("/health", {
-  user: localStorage.getItem("user") || "guest",
+  user: localStorage.getItem("user") || "unknown",
   steps: Number(form.steps),
   sleep: Number(form.sleepHours),
   water: Number(form.waterIntake),
