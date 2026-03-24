@@ -7,16 +7,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ 加这一行
-app.use("/api/auth", require("./routes/authRoutes"));
-
-app.use(express.static(path.join(__dirname, "../client/dist")));
+const authRoutes = require("./routes/authRoutes");
+app.use("/api/auth", authRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ message: "ok" });
 });
 
+app.use(express.static(path.join(__dirname, "../client/dist")));
+
 app.get("*", (req, res) => {
+  if (req.path.startsWith("/api")) {
+    return res.status(404).end();
+  }
   res.sendFile(path.join(__dirname, "../client/dist/index.html"));
 });
 
