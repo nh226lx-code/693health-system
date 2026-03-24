@@ -10,13 +10,15 @@ app.use(express.json())
 let healthData = []
 
 app.post("/api/auth/login", (req, res) => {
-  const { username } = req.body
+  const { username, email, password } = req.body
 
-  if (username === "admin") {
-    res.json({ token: "ok", role: "admin" })
-  } else {
-    res.json({ token: "ok", role: "user" })
+  const account = username || email || ""
+
+  if (account === "test@admin.com" && password === "123456") {
+    return res.json({ token: "ok", role: "admin" })
   }
+
+  return res.json({ token: "ok", role: "user" })
 })
 
 app.post("/api/health", (req, res) => {
