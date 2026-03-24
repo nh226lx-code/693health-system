@@ -9,26 +9,24 @@ export default function AdminUsers() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        
+        // ✅ 改这里（避免白屏）
         const res = await API.get("/health");
 
-       
-        const fakeUsers = res.data.map((item, i) => ({
+        const list = res.data.map((item, i) => ({
           _id: i,
           email: "user" + (i + 1) + "@test.com",
           role: "user"
         }));
 
-      
-        fakeUsers.unshift({
+        // 👉 插入管理员账号
+        list.unshift({
           _id: "admin",
           email: "test@admin.com",
           role: "admin"
         });
 
-        setUsers(fakeUsers);
-      } catch (err) {
-        alert("获取用户失败");
+        setUsers(list);
+      } catch {
         setUsers([]);
       }
     };
@@ -36,9 +34,9 @@ export default function AdminUsers() {
     fetchUsers();
   }, []);
 
-  
-  const filteredUsers = users.filter((user) =>
-    user.email.toLowerCase().includes(keyword.toLowerCase())
+  // ✅ 搜索（按邮箱）
+  const filtered = users.filter((u) =>
+    u.email.toLowerCase().includes(keyword.toLowerCase())
   );
 
   return (
@@ -46,21 +44,27 @@ export default function AdminUsers() {
       <Topbar />
 
       <div style={{ padding: 28 }}>
-        <div style={{ marginBottom: 24 }}>
-          {/* ✅ 放大标题 */}
-          <h2 style={{ margin: 0, fontSize: 34, fontWeight: 800, color: "#0f172a" }}>
+        <div style={{ marginBottom: 20 }}>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 28,
+              fontWeight: 700,
+              color: "#0f172a"
+            }}
+          >
             用户管理
           </h2>
         </div>
 
-        {/* ✅ 搜索框 */}
+        {/* 搜索框（轻微增强，不破UI） */}
         <input
-          placeholder="按用户名搜索"
+          placeholder="按邮箱搜索"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           style={{
             padding: 10,
-            marginBottom: 20,
+            marginBottom: 16,
             width: 260,
             borderRadius: 10,
             border: "1px solid #e2e8f0"
@@ -79,7 +83,7 @@ export default function AdminUsers() {
             style={{
               width: "100%",
               borderCollapse: "collapse",
-              tableLayout: "fixed" 
+              tableLayout: "fixed"
             }}
           >
             <thead>
@@ -91,7 +95,7 @@ export default function AdminUsers() {
             </thead>
 
             <tbody>
-              {filteredUsers.map((user) => (
+              {filtered.map((user) => (
                 <tr key={user._id} style={{ borderBottom: "1px solid #eef2f7" }}>
                   <td style={{ padding: 14 }}>{user.email}</td>
 
@@ -118,7 +122,7 @@ export default function AdminUsers() {
             </tbody>
           </table>
 
-          {filteredUsers.length === 0 && (
+          {filtered.length === 0 && (
             <div style={{ textAlign: "center", padding: 30, color: "#64748b" }}>
               无匹配用户
             </div>

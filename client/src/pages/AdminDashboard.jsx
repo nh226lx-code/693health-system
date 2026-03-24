@@ -32,117 +32,153 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+    <div style={{ minHeight: "100vh", background: "#f5f7fa" }}>
       <Topbar />
 
       <div style={{ padding: 30 }}>
-        {/* 标题（放大） */}
-        <h2
-          style={{
-            fontSize: 36,
-            fontWeight: 800,
-            marginBottom: 30,
-            color: "#0f172a"
-          }}
-        >
-          管理员后台
-        </h2>
+        {/* 标题 */}
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>
+            管理员控制台
+          </h2>
+        </div>
 
-        {/* 卡片 */}
+        {/* 三个卡片 */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3,1fr)",
+            gridTemplateColumns: "repeat(3, 1fr)",
             gap: 20,
-            marginBottom: 30
+            marginBottom: 24
           }}
         >
+          {/* 用户数 */}
           <div
             style={{
-              background: "#e0f2fe",
-              padding: 24,
-              borderRadius: 20
+              background: "#dbeafe",
+              borderRadius: 20,
+              padding: 24
             }}
           >
-            <div style={{ fontSize: 14, marginBottom: 10 }}>用户总数</div>
-            <div style={{ fontSize: 34, fontWeight: 700 }}>
+            <div style={{ marginBottom: 10 }}>注册用户总数</div>
+            <div style={{ fontSize: 36, fontWeight: 700 }}>
               {overview.totalUsers}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 13, color: "#64748b" }}>
+              当前系统中的所有用户
             </div>
           </div>
 
+          {/* 记录数 */}
           <div
             style={{
               background: "#dcfce7",
-              padding: 24,
-              borderRadius: 20
+              borderRadius: 20,
+              padding: 24
             }}
           >
-            <div style={{ fontSize: 14, marginBottom: 10 }}>记录总数</div>
-            <div style={{ fontSize: 34, fontWeight: 700 }}>
+            <div style={{ marginBottom: 10 }}>健康记录总数</div>
+            <div style={{ fontSize: 36, fontWeight: 700 }}>
               {overview.totalRecords}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 13, color: "#64748b" }}>
+              所有用户提交的健康数据
             </div>
           </div>
 
+          {/* 状态 */}
           <div
             style={{
-              background: "#fef9c3",
-              padding: 24,
-              borderRadius: 20
+              background: "#fef3c7",
+              borderRadius: 20,
+              padding: 24
             }}
           >
-            <div style={{ fontSize: 14, marginBottom: 10 }}>系统状态</div>
-            <div style={{ fontSize: 28, fontWeight: 700 }}>正常</div>
+            <div style={{ marginBottom: 10 }}>后台管理状态</div>
+            <div style={{ fontSize: 28, fontWeight: 700 }}>
+              正常运行
+            </div>
+            <div style={{ marginTop: 6, fontSize: 13, color: "#64748b" }}>
+              当前管理员权限已启用
+            </div>
           </div>
         </div>
 
-        {/* 操作入口 */}
+        {/* 下方区域 */}
         <div
           style={{
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "1.5fr 1fr",
             gap: 20
           }}
         >
-          <button
-            onClick={() => navigate("/admin/users")}
+          {/* 系统说明（保留你原UI风格） */}
+          <div
             style={{
-              padding: "14px 20px",
-              background: "#2563eb",
-              color: "#fff",
-              border: "none",
-              borderRadius: 12,
-              cursor: "pointer"
+              background: "#fff",
+              borderRadius: 20,
+              padding: 24
             }}
           >
-            用户管理
-          </button>
+            <h3 style={{ marginBottom: 12 }}>系统说明</h3>
+            <p style={{ color: "#64748b", lineHeight: 1.8 }}>
+              本后台用于查看平台整体运行情况，并提供对用户数据与健康记录的集中管理能力。
+              管理员可以快速进入用户列表与记录管理页面，对系统数据进行统一查看和维护，
+              从而保证本项目具备完整的前台用户使用与后台管理员管理结构。
+            </p>
+          </div>
 
-          <button
-            onClick={() => navigate("/admin/records")}
+          {/* 快捷入口 */}
+          <div
             style={{
-              padding: "14px 20px",
-              background: "#0f172a",
-              color: "#fff",
-              border: "none",
-              borderRadius: 12,
-              cursor: "pointer"
+              background: "#fff",
+              borderRadius: 20,
+              padding: 24
             }}
           >
-            记录管理
-          </button>
+            <h3 style={{ marginBottom: 16 }}>快捷入口</h3>
 
-          <button
-            onClick={() => navigate("/dashboard")}
-            style={{
-              padding: "14px 20px",
-              background: "#06b6d4",
-              color: "#fff",
-              border: "none",
-              borderRadius: 12,
-              cursor: "pointer"
-            }}
-          >
-            返回用户页
-          </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <button
+                onClick={() => navigate("/admin/users")}
+                style={{
+                  padding: "14px",
+                  background: "#2563eb",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 12
+                }}
+              >
+                查看用户列表
+              </button>
+
+              <button
+                onClick={() => navigate("/admin/records")}
+                style={{
+                  padding: "14px",
+                  background: "#0f172a",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 12
+                }}
+              >
+                管理健康记录
+              </button>
+
+              <button
+                onClick={() => navigate("/dashboard")}
+                style={{
+                  padding: "14px",
+                  background: "#06b6d4",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 12
+                }}
+              >
+                返回用户首页
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

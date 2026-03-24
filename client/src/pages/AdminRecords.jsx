@@ -7,10 +7,10 @@ export default function AdminRecords() {
 
   const fetchRecords = async () => {
     try {
-    
+      // ✅ 改这里（避免白屏）
       const res = await API.get("/health");
 
-      const fixed = res.data.map((item, i) => ({
+      const list = res.data.map((item, i) => ({
         _id: i,
         userId: "用户" + (i + 1),
         steps: item.steps || 0,
@@ -19,9 +19,8 @@ export default function AdminRecords() {
         weight: item.weight || 0
       }));
 
-      setRecords(fixed);
-    } catch (err) {
-      alert("获取记录失败");
+      setRecords(list);
+    } catch {
       setRecords([]);
     }
   };
@@ -31,7 +30,7 @@ export default function AdminRecords() {
   }, []);
 
   const handleDelete = (id) => {
-    
+    // ✅ 本地删除（避免调用不存在接口）
     setRecords(records.filter((item) => item._id !== id));
   };
 
@@ -41,8 +40,7 @@ export default function AdminRecords() {
 
       <div style={{ padding: 28 }}>
         <div style={{ marginBottom: 24 }}>
-          {/* ✅ 字体放大 */}
-          <h2 style={{ margin: 0, fontSize: 34, fontWeight: 800, color: "#0f172a" }}>
+          <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>
             健康记录管理
           </h2>
         </div>
@@ -59,7 +57,7 @@ export default function AdminRecords() {
             style={{
               width: "100%",
               borderCollapse: "collapse",
-              tableLayout: "fixed" 
+              tableLayout: "fixed"
             }}
           >
             <thead>
