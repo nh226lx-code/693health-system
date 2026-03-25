@@ -78,7 +78,9 @@ export default function AdminRecords() {
               {records.map((item) => (
                 <tr key={item._id} style={{ borderBottom: "1px solid #eef2f7" }}>
                   <td style={{ padding: 14 }}>{item.date}</td>
-                  <td style={{ padding: 14 }}>{item._id}</td>
+                  <td style={{ padding: 14 }}>
+                    {item.email ? item.email.split("@")[0] : "unknown"}
+                  </td>
                   <td style={{ padding: 14 }}>{item.email}</td>
                   <td style={{ padding: 14 }}>{item.steps}</td>
                   <td style={{ padding: 14 }}>{item.sleep}</td>
