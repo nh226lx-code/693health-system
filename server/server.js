@@ -32,17 +32,24 @@ const Health = mongoose.model("Health", HealthSchema)
 
 
 app.post("/api/auth/login", (req, res) => {
-  const { username, email, password } = req.body
+  const { username, email, password } = req.body;
 
-  const account = username || email || ""
+  const account = username || email || "";
 
   if (account === "test@admin.com" && password === "123456") {
-  return res.json({ 
-    token: "admin-token", 
-    role: "admin",
-    user: account
-  })
-}
+    return res.json({
+      token: "admin-token",
+      role: "admin",
+      userId: account  
+    });
+  }
+
+  return res.json({
+    token: account + "-token",
+    role: "user",
+    userId: account 
+  });
+});
 
 return res.json({ 
   token: account + "-token",
