@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API from "../services/api";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -15,21 +16,13 @@ export default function Register() {
     }
 
     try {
-      const res = await fetch("/api/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          role: "user"
-        })
+      const res = await API.post("/users", {
+        email,
+        password,
+        role: "user"
       });
 
-      const data = await res.json();
-
-      if (data.message === "exist") {
+      if (res.data.message === "exist") {
         alert("用户已存在");
         return;
       }
