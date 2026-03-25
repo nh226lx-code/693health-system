@@ -104,9 +104,8 @@ export default function AdminUsers() {
             <tbody>
               {filtered.map((user) => (
                 <tr key={user._id}>
-                  {/* ✅ 核心修复：用 MongoDB _id */}
                   <td style={{ padding: 14 }}>
-                    {user._id}
+                    {user.username || user.email.split("@")[0]}
                   </td>
 
                   <td style={{ padding: 14 }}>{user.email}</td>
