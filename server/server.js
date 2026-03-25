@@ -15,7 +15,7 @@ mongoose.connect(process.env.MONGO_URI)
     console.log("MongoDB connected");
     console.log("USING URI:", process.env.MONGO_URI);
   })
-  .catch(err => console.log(err));
+  .catch((err) => console.log(err));
 
 const HealthSchema = new mongoose.Schema({
   date: String,
@@ -26,15 +26,14 @@ const HealthSchema = new mongoose.Schema({
   weight: Number
 });
 
-const Health = mongoose.model("Health", HealthSchema);
-
 const UserSchema = new mongoose.Schema({
   email: String,
   password: String,
   role: String
 });
 
-const User = mongoose.model("User", UserSchema);
+const Health = mongoose.models.Health || mongoose.model("Health", HealthSchema);
+const User = mongoose.models.User || mongoose.model("User", UserSchema);
 
 app.post("/api/auth/login", async (req, res) => {
   try {
@@ -51,7 +50,13 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(400).json({ message: "User not found" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password || "");
+    let isMatch = false;
+
+    if (user.password && user.password.startsWith("$2")) {
+      isMatch = await bcrypt.compare(password, user.password);
+    } else {
+      isMatch = password === user.password;
+    }
 
     if (!isMatch) {
       return res.status(400).json({ message: "Wrong password" });
@@ -98,13 +103,13 @@ app.post("/api/users", async (req, res) => {
       role: role || "user"
     });
 
-    res.json({
+    return res.json({
       _id: newUser._id,
       email: newUser.email,
       role: newUser.role
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
