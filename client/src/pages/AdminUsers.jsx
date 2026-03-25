@@ -10,7 +10,6 @@ export default function AdminUsers() {
     try {
       const res = await API.get("/users");
 
-      
       const seen = new Set();
       let adminKept = false;
 
@@ -45,8 +44,7 @@ export default function AdminUsers() {
   };
 
   const filtered = users.filter((u) =>
-    (u.email || "").toLowerCase().includes(keyword.toLowerCase()) ||
-    (u.username || "").toLowerCase().includes(keyword.toLowerCase())
+    (u.email || "").toLowerCase().includes(keyword.toLowerCase())
   );
 
   return (
@@ -67,7 +65,7 @@ export default function AdminUsers() {
           </h2>
 
           <input
-            placeholder="按用户名或邮箱搜索"
+            placeholder="按邮箱搜索"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             style={{
@@ -106,16 +104,15 @@ export default function AdminUsers() {
             <tbody>
               {filtered.map((user) => (
                 <tr key={user._id}>
-                  {/* ✅ 修复2：用户ID=用户名 */}
+                  {/* ✅ 核心修复：用 MongoDB _id */}
                   <td style={{ padding: 14 }}>
-                    {user.username || user.email}
+                    {user._id}
                   </td>
 
                   <td style={{ padding: 14 }}>{user.email}</td>
                   <td style={{ padding: 14 }}>{user.role}</td>
 
                   <td style={{ padding: 14 }}>
-                    {/* ✅ 修复3：管理员不可删 */}
                     {user.role !== "admin" && (
                       <button
                         onClick={() => handleDelete(user._id)}
