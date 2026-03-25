@@ -17,6 +17,7 @@ export default function Register() {
 
     try {
       const res = await API.post("/users", {
+        username, // ✅ 修复：传用户名
         email,
         password,
         role: "user"

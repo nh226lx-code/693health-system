@@ -26,7 +26,7 @@ export default function AdminUsers() {
   };
 
   const filtered = users.filter((u) =>
-    u.email.toLowerCase().includes(keyword.toLowerCase())
+    (u.email || "").toLowerCase().includes(keyword.toLowerCase())
   );
 
   return (
@@ -86,8 +86,10 @@ export default function AdminUsers() {
             <tbody>
               {filtered.map((user) => (
                 <tr key={user._id}>
-                  {/* ✅ 唯一修复：用邮箱代替随机ID */}
-                  <td style={{ padding: 14 }}>{user.email}</td>
+                  {/* ✅ 修复：显示用户名 */}
+                  <td style={{ padding: 14 }}>
+                    {user.username || user.email}
+                  </td>
 
                   <td style={{ padding: 14 }}>{user.email}</td>
                   <td style={{ padding: 14 }}>{user.role}</td>
