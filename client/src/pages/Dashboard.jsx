@@ -400,7 +400,11 @@ const chartData = useMemo(() => {
                   style={{
                     ...cardBase,
                     padding: 18,
-                    background: item.bg
+                    background: item.bg,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    minHeight: 132
                   }}
                 >
                   <div
@@ -682,78 +686,83 @@ const chartData = useMemo(() => {
                   background:
                     "linear-gradient(180deg,#f8fbff 0%, #ffffff 32%, #fcfdff 100%)",
                   border: "1px solid #edf2f7",
-                  padding: 14
+                  padding: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
                 }}
               >
-                <ResponsiveContainer width="100%" height="300">
-                  <LineChart
-                    data={chartData}
-                    margin={{ top: 10, right: 12, left: 0, bottom: 6 }}
-                  >
-                    <CartesianGrid stroke="#e8eef7" strokeDasharray="4 4" />
-                    <XAxis
-                      dataKey="日期"
-                      tick={{ fill: "#64748b", fontSize: 12 }}
-                      axisLine={{ stroke: "#d9e3f0" }}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fill: "#64748b", fontSize: 12 }}
-                      axisLine={{ stroke: "#d9e3f0" }}
-                      tickLine={false}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: 14,
-                        border: "1px solid #e2e8f0",
-                        boxShadow: "0 10px 30px rgba(15,23,42,0.08)"
-                      }}
-                      labelStyle={{ color: "#0f172a", fontWeight: 700 }}
-                    />
-                    <Legend
-                      wrapperStyle={{
-                        paddingTop: 8,
-                        fontSize: 13
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="步数"
-                      name="步数"
-                      stroke="#2563eb"
-                      strokeWidth={3}
-                      dot={{ r: 3, strokeWidth: 2 }}
-                      activeDot={{ r: 6 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="睡眠"
-                      name="睡眠"
-                      stroke="#16a34a"
-                      strokeWidth={3}
-                      dot={{ r: 3, strokeWidth: 2 }}
-                      activeDot={{ r: 6 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="饮水"
-                      name="饮水"
-                      stroke="#06b6d4"
-                      strokeWidth={3}
-                      dot={{ r: 3, strokeWidth: 2 }}
-                      activeDot={{ r: 6 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="体重"
-                      name="体重"
-                      stroke="#f97316"
-                      strokeWidth={3}
-                      dot={{ r: 3, strokeWidth: 2 }}
-                      activeDot={{ r: 6 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <div style={{ width: "100%", height: "100%" }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={chartData}
+                      margin={{ top: 10, right: 12, left: 0, bottom: 6 }}
+                    >
+                      <CartesianGrid stroke="#e8eef7" strokeDasharray="4 4" />
+                      <XAxis
+                        dataKey="日期"
+                        tick={{ fill: "#64748b", fontSize: 12 }}
+                        axisLine={{ stroke: "#d9e3f0" }}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fill: "#64748b", fontSize: 12 }}
+                        axisLine={{ stroke: "#d9e3f0" }}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: 14,
+                          border: "1px solid #e2e8f0",
+                          boxShadow: "0 10px 30px rgba(15,23,42,0.08)"
+                        }}
+                        labelStyle={{ color: "#0f172a", fontWeight: 700 }}
+                      />
+                      <Legend
+                        wrapperStyle={{
+                          paddingTop: 8,
+                          fontSize: 13
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="步数"
+                        name="步数"
+                        stroke="#2563eb"
+                        strokeWidth={3}
+                        dot={{ r: 3, strokeWidth: 2 }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="睡眠"
+                        name="睡眠"
+                        stroke="#16a34a"
+                        strokeWidth={3}
+                        dot={{ r: 3, strokeWidth: 2 }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="饮水"
+                        name="饮水"
+                        stroke="#06b6d4"
+                        strokeWidth={3}
+                        dot={{ r: 3, strokeWidth: 2 }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="体重"
+                        name="体重"
+                        stroke="#f97316"
+                        strokeWidth={3}
+                        dot={{ r: 3, strokeWidth: 2 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
           </div>
