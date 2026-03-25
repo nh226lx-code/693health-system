@@ -5,13 +5,9 @@ import Topbar from "../components/Topbar.jsx";
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [keyword, setKeyword] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState("user");
 
   const fetchUsers = async () => {
     try {
-      // ✅ 正确：从 users 表获取
       const res = await API.get("/users");
       setUsers(res.data);
     } catch {
@@ -23,31 +19,9 @@ export default function AdminUsers() {
     fetchUsers();
   }, []);
 
-  // ✅ 新增用户（真正写入数据库）
-  const handleAddUser = async () => {
-    if (!email || !password) return;
-
-    try {
-      await API.post("/users", {
-        email,
-        password,
-        role
-      });
-
-      setEmail("");
-      setPassword("");
-      setRole("user");
-
-      fetchUsers(); // 刷新列表
-    } catch {
-      alert("创建失败");
-    }
-  };
-
   const handleDelete = (id) => {
     const ok = window.confirm("确定删除该用户？");
     if (!ok) return;
-
     setUsers(users.filter((u) => u._id !== id));
   };
 
@@ -60,7 +34,6 @@ export default function AdminUsers() {
       <Topbar />
 
       <div style={{ padding: 28 }}>
-        {/* 标题 + 搜索 */}
         <div
           style={{
             display: "flex",
@@ -86,53 +59,6 @@ export default function AdminUsers() {
           />
         </div>
 
-        {/* 新增用户 */}
-        <div
-          style={{
-            marginBottom: 20,
-            display: "flex",
-            gap: 10
-          }}
-        >
-          <input
-            placeholder="邮箱"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ padding: 10, borderRadius: 8, border: "1px solid #ddd" }}
-          />
-
-          <input
-            placeholder="密码"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ padding: 10, borderRadius: 8, border: "1px solid #ddd" }}
-          />
-
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            style={{ padding: 10, borderRadius: 8 }}
-          >
-            <option value="user">user</option>
-            <option value="admin">admin</option>
-          </select>
-
-          <button
-            onClick={handleAddUser}
-            style={{
-              background: "#22c55e",
-              color: "#fff",
-              border: "none",
-              padding: "10px 16px",
-              borderRadius: 8,
-              cursor: "pointer"
-            }}
-          >
-            添加用户
-          </button>
-        </div>
-
-        {/* 表格 */}
         <div
           style={{
             background: "#fff",

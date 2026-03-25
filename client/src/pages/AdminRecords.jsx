@@ -9,7 +9,6 @@ export default function AdminRecords() {
     try {
       const res = await API.get("/health");
 
-      // ✅ 直接用后端真实数据，不乱改字段
       const list = res.data.map((item) => ({
         _id: item._id,
         user: item.user || "unknown",
@@ -59,14 +58,14 @@ export default function AdminRecords() {
               width: "100%",
               borderCollapse: "collapse",
               tableLayout: "fixed",
-              textAlign: "center" // ✅ 全部居中
+              textAlign: "center"
             }}
           >
             <thead>
               <tr style={{ background: "#f8fafc" }}>
+                <th style={{ padding: 14 }}>日期</th>
                 <th style={{ padding: 14 }}>用户ID</th>
                 <th style={{ padding: 14 }}>邮箱</th>
-                <th style={{ padding: 14 }}>日期</th>
                 <th style={{ padding: 14 }}>步数</th>
                 <th style={{ padding: 14 }}>睡眠</th>
                 <th style={{ padding: 14 }}>饮水</th>
@@ -78,9 +77,9 @@ export default function AdminRecords() {
             <tbody>
               {records.map((item) => (
                 <tr key={item._id} style={{ borderBottom: "1px solid #eef2f7" }}>
+                  <td style={{ padding: 14 }}>{item.date}</td>
                   <td style={{ padding: 14 }}>{item._id}</td>
                   <td style={{ padding: 14 }}>{item.email}</td>
-                  <td style={{ padding: 14 }}>{item.date}</td>
                   <td style={{ padding: 14 }}>{item.steps}</td>
                   <td style={{ padding: 14 }}>{item.sleep}</td>
                   <td style={{ padding: 14 }}>{item.water}</td>
