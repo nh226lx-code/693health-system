@@ -4,9 +4,9 @@ const jwt = require("jsonwebtoken");
 
 exports.register = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, email, password } = req.body;
 
-    if (!email || !password) {
+    if (!username || !email || !password) {
       return res.status(400).json("missing fields");
     }
 
@@ -20,6 +20,7 @@ exports.register = async (req, res) => {
     const role = email === "admin@test.com" ? "admin" : "user";
 
     const user = new User({
+      username,   // ✅ 修复点：保存用户名
       email,
       password: hash,
       role
