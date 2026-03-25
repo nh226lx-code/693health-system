@@ -81,7 +81,7 @@ export default function Dashboard() {
       .map((item) => ({
         日期: item.date,
         步数: item.steps,
-        睡眠: item.sleepHours,
+        睡眠: item.sleepHours || item.sleep || 0,
         饮水: item.waterIntake,
         体重: item.weight
       }));
