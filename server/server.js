@@ -61,7 +61,12 @@ app.post("/api/auth/login", async (req, res) => {
             isMatch = password === user.password;
           }
         } catch {
-          isMatch = password === user.password;
+          isMatch = false;
+        }
+
+        // ✅ 关键修复：bcrypt失败时兜底（只加这一行逻辑）
+        if (!isMatch && password === user.password) {
+          isMatch = true;
         }
       }
 
