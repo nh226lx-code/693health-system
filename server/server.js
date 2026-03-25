@@ -26,6 +26,7 @@ const HealthSchema = new mongoose.Schema({
 });
 
 const Health = mongoose.model("Health", HealthSchema);
+
 const UserSchema = new mongoose.Schema({
   email: String,
   role: String
@@ -33,7 +34,7 @@ const UserSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", UserSchema);
 
-
+// 登录
 app.post("/api/auth/login", (req, res) => {
   const { username, email, password } = req.body;
 
@@ -54,12 +55,11 @@ app.post("/api/auth/login", (req, res) => {
   });
 });
 
-
+// 用户
 app.get("/api/users", async (req, res) => {
   const users = await User.find();
   res.json(users);
 });
-
 
 app.post("/api/users", async (req, res) => {
   const { email, role } = req.body;
@@ -71,16 +71,8 @@ app.post("/api/users", async (req, res) => {
 
   res.json(newUser);
 });
-  
 
-  return res.json({
-    token: account + "-token",
-    role: "user",
-    userId: account
-  });
-});
-
-
+// 健康数据
 app.post("/api/health", async (req, res) => {
   const date = new Date(
     req.body.date || req.body.recordDate || new Date()
@@ -102,13 +94,12 @@ app.post("/api/health", async (req, res) => {
   res.json({ message: "saved" });
 });
 
-
 app.get("/api/health", async (req, res) => {
   const data = await Health.find().sort({ date: -1 });
   res.json(data);
 });
 
-
+// 前端
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
 app.get("*", (req, res) => {
