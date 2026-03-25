@@ -7,17 +7,19 @@ export default function AdminRecords() {
 
   const fetchRecords = async () => {
     try {
-     
       const res = await API.get("/health");
 
-      const list = res.data.map((item, i) => ({
-  _id: i,
-  userId: item.user || "unknown",
-  steps: item.steps || 0,
-  sleepHours: item.sleep || 0,
-  waterIntake: item.water || 0,
-  weight: item.weight || 0
-}));
+      // ✅ 直接用后端真实数据，不乱改字段
+      const list = res.data.map((item) => ({
+        _id: item._id,
+        user: item.user || "unknown",
+        email: (item.user || "").replace("-token", ""),
+        date: item.date || "",
+        steps: item.steps || 0,
+        sleep: item.sleep || 0,
+        water: item.water || 0,
+        weight: item.weight || 0
+      }));
 
       setRecords(list);
     } catch {
@@ -30,7 +32,6 @@ export default function AdminRecords() {
   }, []);
 
   const handleDelete = (id) => {
-    // ✅ 本地删除（避免调用不存在接口）
     setRecords(records.filter((item) => item._id !== id));
   };
 
@@ -57,12 +58,15 @@ export default function AdminRecords() {
             style={{
               width: "100%",
               borderCollapse: "collapse",
-              tableLayout: "fixed"
+              tableLayout: "fixed",
+              textAlign: "center" // ✅ 全部居中
             }}
           >
             <thead>
               <tr style={{ background: "#f8fafc" }}>
                 <th style={{ padding: 14 }}>用户ID</th>
+                <th style={{ padding: 14 }}>邮箱</th>
+                <th style={{ padding: 14 }}>日期</th>
                 <th style={{ padding: 14 }}>步数</th>
                 <th style={{ padding: 14 }}>睡眠</th>
                 <th style={{ padding: 14 }}>饮水</th>
@@ -74,12 +78,14 @@ export default function AdminRecords() {
             <tbody>
               {records.map((item) => (
                 <tr key={item._id} style={{ borderBottom: "1px solid #eef2f7" }}>
-                  <td style={{ padding: 14 }}>{item.userId}</td>
-                  <td style={{ padding: 14 }}>{item.steps} 步</td>
-                  <td style={{ padding: 14 }}>{item.sleepHours} 小时</td>
-                  <td style={{ padding: 14 }}>{item.waterIntake} L</td>
-                  <td style={{ padding: 14 }}>{item.weight} kg</td>
-                  <td style={{ padding: 14, textAlign: "center" }}>
+                  <td style={{ padding: 14 }}>{item._id}</td>
+                  <td style={{ padding: 14 }}>{item.email}</td>
+                  <td style={{ padding: 14 }}>{item.date}</td>
+                  <td style={{ padding: 14 }}>{item.steps}</td>
+                  <td style={{ padding: 14 }}>{item.sleep}</td>
+                  <td style={{ padding: 14 }}>{item.water}</td>
+                  <td style={{ padding: 14 }}>{item.weight}</td>
+                  <td style={{ padding: 14 }}>
                     <button
                       onClick={() => handleDelete(item._id)}
                       style={{
