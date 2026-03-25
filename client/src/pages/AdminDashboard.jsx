@@ -14,11 +14,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await API.get("/health");
+        const userRes = await API.get("/users");
+        const recordRes = await API.get("/health");
 
         setOverview({
-          totalUsers: 1,
-          totalRecords: Array.isArray(res.data) ? res.data.length : 0
+          totalUsers: Array.isArray(userRes.data) ? userRes.data.length : 0,
+          totalRecords: Array.isArray(recordRes.data) ? recordRes.data.length : 0
         });
       } catch {
         setOverview({
@@ -35,10 +36,8 @@ export default function AdminDashboard() {
     <div style={{ background: "#f5f7fa", paddingBottom: 30 }}>
       <Topbar />
 
-      {/* ✅ 补回结构容器（不影响UI） */}
       <div style={{ padding: 30 }}>
 
-        {/* 三个卡片 */}
         <div
           style={{
             display: "grid",
@@ -47,12 +46,16 @@ export default function AdminDashboard() {
             marginBottom: 24
           }}
         >
-          {/* 用户数 */}
           <div
             style={{
               background: "#dbeafe",
               borderRadius: 20,
-              padding: 24
+              padding: 24,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center"
             }}
           >
             <div style={{ marginBottom: 10 }}>注册用户总数</div>
@@ -64,12 +67,16 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* 记录数 */}
           <div
             style={{
               background: "#dcfce7",
               borderRadius: 20,
-              padding: 24
+              padding: 24,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center"
             }}
           >
             <div style={{ marginBottom: 10 }}>健康记录总数</div>
@@ -81,12 +88,16 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* 状态 */}
           <div
             style={{
               background: "#fef3c7",
               borderRadius: 20,
-              padding: 24
+              padding: 24,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center"
             }}
           >
             <div style={{ marginBottom: 10 }}>后台管理状态</div>
@@ -99,7 +110,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* 下方区域 */}
         <div
           style={{
             display: "grid",
@@ -107,7 +117,6 @@ export default function AdminDashboard() {
             gap: 20
           }}
         >
-          {/* 系统说明 */}
           <div
             style={{
               background: "#fff",
@@ -123,7 +132,6 @@ export default function AdminDashboard() {
             </p>
           </div>
 
-          {/* 快捷入口 */}
           <div
             style={{
               background: "#fff",
@@ -160,8 +168,9 @@ export default function AdminDashboard() {
                 管理健康记录
               </button>
 
+              {/* ✅ 只改这里 */}
               <button
-                onClick={() => navigate("/dashboard")}
+                onClick={() => navigate("/")}
                 style={{
                   padding: "14px",
                   background: "#06b6d4",
@@ -170,7 +179,7 @@ export default function AdminDashboard() {
                   borderRadius: 12
                 }}
               >
-                返回用户首页
+                返回首页
               </button>
             </div>
           </div>
