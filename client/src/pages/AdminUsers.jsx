@@ -86,7 +86,9 @@ export default function AdminUsers() {
             <tbody>
               {filtered.map((user) => (
                 <tr key={user._id}>
-                  <td style={{ padding: 14 }}>{user._id}</td>
+                  {/* ✅ 唯一修复：用邮箱代替随机ID */}
+                  <td style={{ padding: 14 }}>{user.email}</td>
+
                   <td style={{ padding: 14 }}>{user.email}</td>
                   <td style={{ padding: 14 }}>{user.role}</td>
                   <td style={{ padding: 14 }}>
