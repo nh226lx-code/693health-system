@@ -10,24 +10,9 @@ export default function AdminUsers() {
     try {
       const res = await API.get("/users");
 
-      const seen = new Set();
-      let adminKept = false;
+      // ✅ 修复：不再过滤用户
+      setUsers(res.data);
 
-      const clean = [];
-
-      res.data.forEach((u) => {
-        if (!u.email || seen.has(u.email)) return;
-        seen.add(u.email);
-
-        if (u.role === "admin") {
-          if (adminKept) return;
-          adminKept = true;
-        }
-
-        clean.push(u);
-      });
-
-      setUsers(clean);
     } catch {
       setUsers([]);
     }
