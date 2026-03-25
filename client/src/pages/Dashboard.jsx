@@ -24,6 +24,12 @@ export default function Dashboard() {
     date: ""
   });
 
+  const displayUser =
+    localStorage.getItem("user") ||
+    localStorage.getItem("username") ||
+    localStorage.getItem("email")?.split("@")[0] ||
+    "未登录";
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -57,25 +63,25 @@ export default function Dashboard() {
   }, []);
 
   const latest = records.length
-  ? [...records].sort((a, b) => new Date(b.date) - new Date(a.date))[0]
-  : null;
+    ? [...records].sort((a, b) => new Date(b.date) - new Date(a.date))[0]
+    : null;
 
   const bmi =
     latest && latest.weight
       ? (latest.weight / (1.7 * 1.7)).toFixed(1)
       : "--";
 
-const chartData = useMemo(() => {
-  return [...records]
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
-    .map((item) => ({
-      日期: item.date,
-      步数: item.steps,
-      睡眠: item.sleepHours,
-      饮水: item.waterIntake,
-      体重: item.weight
-    }));
-}, [records]);
+  const chartData = useMemo(() => {
+    return [...records]
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .map((item) => ({
+        日期: item.date,
+        步数: item.steps,
+        睡眠: item.sleepHours,
+        饮水: item.waterIntake,
+        体重: item.weight
+      }));
+  }, [records]);
 
   const analysis = useMemo(() => {
     if (!latest) {
@@ -151,14 +157,14 @@ const chartData = useMemo(() => {
     }
 
     try {
-     await API.post("/health", {
-  user: localStorage.getItem("user") || "unknown",
-  steps: Number(form.steps),
-  sleep: Number(form.sleepHours),
-  water: Number(form.waterIntake),
-  weight: Number(form.weight),
-  date: form.date
-});
+      await API.post("/health", {
+        user: localStorage.getItem("user") || "unknown",
+        steps: Number(form.steps),
+        sleep: Number(form.sleepHours),
+        water: Number(form.waterIntake),
+        weight: Number(form.weight),
+        date: form.date
+      });
 
       setForm({
         steps: "",
@@ -179,6 +185,9 @@ const chartData = useMemo(() => {
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("user");
+    localStorage.removeItem("username");
+    localStorage.removeItem("email");
     navigate("/login");
   };
 
@@ -245,27 +254,27 @@ const chartData = useMemo(() => {
   };
 
   const thStyle = {
-  padding: "14px 16px",
-  textAlign: "center",
-  fontSize: 14,
-  fontWeight: 800,
-  color: "#1e3a8a",
-  borderBottom: "1px solid #dbeafe",
-  background: "#eff6ff",
-  width: "20%"
-};
+    padding: "14px 16px",
+    textAlign: "center",
+    fontSize: 14,
+    fontWeight: 800,
+    color: "#1e3a8a",
+    borderBottom: "1px solid #dbeafe",
+    background: "#eff6ff",
+    width: "20%"
+  };
 
   const tdStyle = {
-  padding: "14px 16px",
-  fontSize: 14,
-  color: "#334155",
-  borderBottom: "1px solid #eef2f7",
-  textAlign: "center",
-  width: "20%",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis"
-};
+    padding: "14px 16px",
+    fontSize: 14,
+    color: "#334155",
+    borderBottom: "1px solid #eef2f7",
+    textAlign: "center",
+    width: "20%",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis"
+  };
 
   return (
     <div
@@ -323,16 +332,28 @@ const chartData = useMemo(() => {
               flexWrap: "wrap"
             }}
           >
-            <h1
-              style={{
-                margin: 0,
-                fontSize: 32,
-                color: "#1e3a8a",
-                fontWeight: 800
-              }}
-            >
-              个人健康管理中心
-            </h1>
+            <div>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: 32,
+                  color: "#1e3a8a",
+                  fontWeight: 800
+                }}
+              >
+                个人健康管理中心
+              </h1>
+              <div
+                style={{
+                  marginTop: 8,
+                  color: "#475569",
+                  fontSize: 14,
+                  fontWeight: 600
+                }}
+              >
+                当前用户：{displayUser}
+              </div>
+            </div>
 
             <div style={{ display: "flex", gap: 12 }}>
               <button
@@ -403,18 +424,24 @@ const chartData = useMemo(() => {
                     background: item.bg,
                     display: "flex",
                     flexDirection: "column",
+                    alignItems: "center",
                     justifyContent: "center",
-                    minHeight: 132
+                    minHeight: 132,
+                    textAlign: "center"
                   }}
                 >
                   <div
                     style={{
                       display: "flex",
-                      justifyContent: "space-between",
+                      flexDirection: "column",
                       alignItems: "center",
-                      marginBottom: 16
+                      justifyContent: "center",
+                      marginBottom: 12
                     }}
                   >
+                    <span style={{ fontSize: 24, marginBottom: 6 }}>
+                      {item.icon}
+                    </span>
                     <span
                       style={{
                         color: "#64748b",
@@ -424,7 +451,6 @@ const chartData = useMemo(() => {
                     >
                       {item.title}
                     </span>
-                    <span style={{ fontSize: 24 }}>{item.icon}</span>
                   </div>
 
                   <div
@@ -432,7 +458,10 @@ const chartData = useMemo(() => {
                       fontSize: 28,
                       fontWeight: 800,
                       color: item.valueColor,
-                      lineHeight: 1
+                      lineHeight: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
                     }}
                   >
                     {item.value}
@@ -485,8 +514,6 @@ const chartData = useMemo(() => {
                   {analysis.text}
                 </div>
               </div>
-
-            
             </div>
           </div>
         </div>
@@ -500,7 +527,6 @@ const chartData = useMemo(() => {
               marginBottom: 14
             }}
           >
-        
           </div>
 
           <div
@@ -676,7 +702,6 @@ const chartData = useMemo(() => {
                 >
                   曲线分析
                 </div>
-
               </div>
 
               <div
@@ -788,13 +813,12 @@ const chartData = useMemo(() => {
             }}
           >
             <table
-  style={{
-    width: "100%",
-    borderCollapse: "collapse",
-    tableLayout: "fixed"
-  }}
->
-          
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                tableLayout: "fixed"
+              }}
+            >
               <thead>
                 <tr>
                   <th style={thStyle}>日期</th>
@@ -832,17 +856,15 @@ const chartData = useMemo(() => {
                     </td>
                   </tr>
                 ) : (
-              [...records]
-               .sort((a, b) => new Date(b.date) - new Date(a.date))
-            
-  .map((item, index) => (
+                  [...records]
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .map((item, index) => (
                       <tr
                         key={item.id || index}
                         style={{
                           background: index % 2 === 0 ? "#ffffff" : "#fafcff"
                         }}
                       >
-
                         <td style={tdStyle}>{item.date}</td>
                         <td style={tdStyle}>{item.steps}</td>
                         <td style={tdStyle}>{item.sleepHours} h</td>
