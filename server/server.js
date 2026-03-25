@@ -34,7 +34,7 @@ const UserSchema = new mongoose.Schema({
 const Health = mongoose.models.Health || mongoose.model("Health", HealthSchema);
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
 
-/* ======== 只修这里（login）======== */
+/* ======== 修复登录稳定性（唯一改动）======== */
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -45,15 +45,15 @@ app.post("/api/auth/login", async (req, res) => {
 
     const user = await User.findOne({ email });
 
-    if (!user) {
+    if (!user || !user.password) {
       return res.status(400).json({ message: "用户不存在" });
     }
 
     let isMatch = false;
 
-    if (user.password && user.password.startsWith("$2")) {
+    try {
       isMatch = await bcrypt.compare(password, user.password);
-    } else {
+    } catch {
       isMatch = password === user.password;
     }
 
@@ -70,7 +70,7 @@ app.post("/api/auth/login", async (req, res) => {
     return res.status(500).json({ message: "服务器错误" });
   }
 });
-/* ======== login修复结束 ======== */
+/* ======== 登录修复结束 ======== */
 
 app.get("/api/users", async (req, res) => {
   try {
