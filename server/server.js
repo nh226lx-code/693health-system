@@ -34,7 +34,6 @@ const UserSchema = new mongoose.Schema({
 const Health = mongoose.models.Health || mongoose.model("Health", HealthSchema);
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
 
-/* ======== 修复登录稳定性（唯一改动）======== */
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -43,34 +42,48 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(400).json({ message: "请输入邮箱和密码" });
     }
 
-    const user = await User.findOne({ email });
+    const users = await User.find({ email });
 
-    if (!user || !user.password) {
+    if (!users || users.length === 0) {
       return res.status(400).json({ message: "用户不存在" });
     }
 
-    let isMatch = false;
+    let matchedUser = null;
 
-    try {
-      isMatch = await bcrypt.compare(password, user.password);
-    } catch {
-      isMatch = password === user.password;
+    for (const user of users) {
+      let isMatch = false;
+
+      if (user.password) {
+        try {
+          if (user.password.startsWith("$2")) {
+            isMatch = await bcrypt.compare(password, user.password);
+          } else {
+            isMatch = password === user.password;
+          }
+        } catch {
+          isMatch = password === user.password;
+        }
+      }
+
+      if (isMatch) {
+        matchedUser = user;
+        break;
+      }
     }
 
-    if (!isMatch) {
+    if (!matchedUser) {
       return res.status(400).json({ message: "密码错误" });
     }
 
     return res.json({
       token: email + "-token",
-      role: user.role || "user",
+      role: matchedUser.role || "user",
       userId: email
     });
   } catch {
     return res.status(500).json({ message: "服务器错误" });
   }
 });
-/* ======== 登录修复结束 ======== */
 
 app.get("/api/users", async (req, res) => {
   try {
