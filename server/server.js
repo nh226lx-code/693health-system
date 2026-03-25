@@ -34,57 +34,43 @@ const UserSchema = new mongoose.Schema({
 const Health = mongoose.models.Health || mongoose.model("Health", HealthSchema);
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
 
+/* ======== 只修这里（login）======== */
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.json({
-        token: email + "-token",
-        role: "user",
-        userId: email
-      });
+      return res.status(400).json({ message: "请输入邮箱和密码" });
     }
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.json({
-        token: email + "-token",
-        role: "user",
-        userId: email
-      });
+      return res.status(400).json({ message: "用户不存在" });
     }
 
-    let ok = false;
+    let isMatch = false;
 
     if (user.password && user.password.startsWith("$2")) {
-      ok = await bcrypt.compare(password, user.password);
+      isMatch = await bcrypt.compare(password, user.password);
     } else {
-      ok = password === user.password;
+      isMatch = password === user.password;
     }
 
-    if (!ok) {
-      return res.json({
-        token: email + "-token",
-        role: user.role || "user",
-        userId: email
-      });
+    if (!isMatch) {
+      return res.status(400).json({ message: "密码错误" });
     }
 
-    res.json({
+    return res.json({
       token: email + "-token",
       role: user.role || "user",
       userId: email
     });
   } catch {
-    res.json({
-      token: "test-token",
-      role: "user",
-      userId: "test"
-    });
+    return res.status(500).json({ message: "服务器错误" });
   }
 });
+/* ======== login修复结束 ======== */
 
 app.get("/api/users", async (req, res) => {
   try {
