@@ -24,11 +24,17 @@ export default function Dashboard() {
     date: ""
   });
 
-  const displayUser =
+  const currentUser =
     localStorage.getItem("user") ||
     localStorage.getItem("username") ||
-    localStorage.getItem("email")?.split("@")[0] ||
-    "未登录";
+    localStorage.getItem("email") ||
+    "";
+
+  const displayUser = currentUser
+    ? currentUser.includes("@")
+      ? currentUser.split("@")[0]
+      : currentUser
+    : "未登录";
 
   const loadData = async () => {
     try {
@@ -158,7 +164,7 @@ export default function Dashboard() {
 
     try {
       await API.post("/health", {
-        user: localStorage.getItem("user") || "unknown",
+        user: currentUser || "unknown",
         steps: Number(form.steps),
         sleep: Number(form.sleepHours),
         water: Number(form.waterIntake),
@@ -332,7 +338,7 @@ export default function Dashboard() {
               flexWrap: "wrap"
             }}
           >
-            <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
               <h1
                 style={{
                   margin: 0,
@@ -345,10 +351,13 @@ export default function Dashboard() {
               </h1>
               <div
                 style={{
-                  marginTop: 8,
                   color: "#475569",
                   fontSize: 14,
-                  fontWeight: 600
+                  fontWeight: 600,
+                  padding: "8px 14px",
+                  borderRadius: 999,
+                  background: "#eff6ff",
+                  border: "1px solid #dbeafe"
                 }}
               >
                 当前用户：{displayUser}
