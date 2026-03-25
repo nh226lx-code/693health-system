@@ -25,16 +25,14 @@ export default function Dashboard() {
   });
 
   const currentUser =
+    localStorage.getItem("userId") ||
     localStorage.getItem("user") ||
     localStorage.getItem("username") ||
-    localStorage.getItem("email") ||
-    "";
+    (localStorage.getItem("email")
+      ? localStorage.getItem("email").split("@")[0]
+      : "");
 
-  const displayUser = currentUser
-    ? currentUser.includes("@")
-      ? currentUser.split("@")[0]
-      : currentUser
-    : "未登录";
+  const displayUser = currentUser || "";
 
   const loadData = async () => {
     try {
@@ -192,6 +190,7 @@ export default function Dashboard() {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("user");
+    localStorage.removeItem("userId");
     localStorage.removeItem("username");
     localStorage.removeItem("email");
     navigate("/login");
