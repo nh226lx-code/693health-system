@@ -26,6 +26,12 @@ const HealthSchema = new mongoose.Schema({
 });
 
 const Health = mongoose.model("Health", HealthSchema);
+const UserSchema = new mongoose.Schema({
+  email: String,
+  role: String
+});
+
+const User = mongoose.model("User", UserSchema);
 
 
 app.post("/api/auth/login", (req, res) => {
@@ -40,6 +46,32 @@ app.post("/api/auth/login", (req, res) => {
       userId: account
     });
   }
+
+  return res.json({
+    token: account + "-token",
+    role: "user",
+    userId: account
+  });
+});
+
+
+app.get("/api/users", async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+});
+
+
+app.post("/api/users", async (req, res) => {
+  const { email, role } = req.body;
+
+  const newUser = await User.create({
+    email,
+    role: role || "user"
+  });
+
+  res.json(newUser);
+});
+  
 
   return res.json({
     token: account + "-token",
