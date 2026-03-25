@@ -37,10 +37,18 @@ app.post("/api/auth/login", (req, res) => {
   const account = username || email || ""
 
   if (account === "test@admin.com" && password === "123456") {
-    return res.json({ token: "ok", role: "admin" })
-  }
+  return res.json({ 
+    token: "admin-token", 
+    role: "admin",
+    user: account
+  })
+}
 
-  return res.json({ token: "ok", role: "user" })
+return res.json({ 
+  token: account + "-token",
+  role: "user",
+  user: account
+})
 })
 
 
@@ -49,9 +57,11 @@ app.post("/api/health", async (req, res) => {
     req.body.date || req.body.recordDate || new Date()
   ).toISOString().slice(0, 10);
 
-  const newData = {
+  const token = req.headers.authorization?.split(" ")[1] || "unknown";
+
+const newData = {
   date,
-  user: req.body.user || "unknown", 
+  user: token,
   steps: Number(req.body.steps) || 0,
   sleep: Number(req.body.sleep) || 0,
   water: Number(req.body.water) || 0,
