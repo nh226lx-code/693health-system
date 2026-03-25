@@ -18,7 +18,9 @@ export default function AdminDashboard() {
         const recordRes = await API.get("/health");
 
         setOverview({
-          totalUsers: Array.isArray(userRes.data) ? userRes.data.length : 0,
+          totalUsers: Array.isArray(userRes.data)
+            ? userRes.data.filter(u => u.role !== "admin").length
+            : 0,
           totalRecords: Array.isArray(recordRes.data) ? recordRes.data.length : 0
         });
       } catch {
@@ -168,7 +170,6 @@ export default function AdminDashboard() {
                 管理健康记录
               </button>
 
-              {/* ✅ 只改这里 */}
               <button
                 onClick={() => navigate("/")}
                 style={{

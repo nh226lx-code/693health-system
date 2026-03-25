@@ -10,7 +10,6 @@ export default function AdminUsers() {
     try {
       const res = await API.get("/users");
 
-      // ✅ 修复：不再过滤用户
       setUsers(res.data);
 
     } catch {
@@ -29,6 +28,7 @@ export default function AdminUsers() {
   };
 
   const filtered = users.filter((u) =>
+    u.role !== "admin" &&
     (u.email || "").toLowerCase().includes(keyword.toLowerCase())
   );
 
