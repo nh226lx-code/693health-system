@@ -4,7 +4,7 @@ import Topbar from "../components/Topbar.jsx";
 
 export default function AdminRecords() {
   const [records, setRecords] = useState([]);
-  const [keyword, setKeyword] = useState(""); // ✅ 搜索
+  const [keyword, setKeyword] = useState("");
 
   const fetchRecords = async () => {
     try {
@@ -21,7 +21,6 @@ export default function AdminRecords() {
           water: item.water || 0,
           weight: item.weight || 0
         }))
-        // ✅ 时间排序：新 → 旧
         .sort((a, b) => new Date(b.date) - new Date(a.date));
 
       setRecords(list);
@@ -38,7 +37,7 @@ export default function AdminRecords() {
     setRecords(records.filter((item) => item._id !== id));
   };
 
-  // ✅ 搜索过滤
+  // ✅ 搜索逻辑
   const filteredRecords = records.filter((item) => {
     const id = item.email ? item.email.split("@")[0] : "";
     const email = item.email || "";
@@ -54,27 +53,49 @@ export default function AdminRecords() {
       <Topbar />
 
       <div style={{ padding: 28 }}>
-        <div style={{ marginBottom: 24 }}>
+        {/* ✅ 标题 + 搜索（同一行） */}
+        <div
+          style={{
+            marginBottom: 24,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center"
+          }}
+        >
           <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>
             健康记录管理
           </h2>
-        </div>
 
-        {/* ✅ 搜索框 */}
-        <div style={{ marginBottom: 16 }}>
-          <input
-            type="text"
-            placeholder="搜索用户ID或邮箱"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            style={{
-              padding: "10px 14px",
-              width: 260,
-              borderRadius: 10,
-              border: "1px solid #e2e8f0",
-              outline: "none"
-            }}
-          />
+          {/* 搜索区域 */}
+          <div style={{ display: "flex", gap: 10 }}>
+            <input
+              type="text"
+              placeholder="输入用户ID或邮箱"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              style={{
+                padding: "10px 14px",
+                width: 240,
+                borderRadius: 10,
+                border: "1px solid #e2e8f0",
+                outline: "none"
+              }}
+            />
+
+            <button
+              style={{
+                padding: "10px 18px",
+                background: "#2563eb",
+                color: "#fff",
+                border: "none",
+                borderRadius: 10,
+                cursor: "pointer",
+                fontWeight: 500
+              }}
+            >
+              搜索
+            </button>
+          </div>
         </div>
 
         <div
