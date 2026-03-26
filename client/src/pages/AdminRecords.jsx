@@ -4,21 +4,25 @@ import Topbar from "../components/Topbar.jsx";
 
 export default function AdminRecords() {
   const [records, setRecords] = useState([]);
+  const [keyword, setKeyword] = useState(""); // ✅ 搜索
 
   const fetchRecords = async () => {
     try {
       const res = await API.get("/health");
 
-      const list = res.data.map((item) => ({
-        _id: item._id,
-        user: item.user || "unknown",
-        email: (item.user || "").replace("-token", ""),
-        date: item.date || "",
-        steps: item.steps || 0,
-        sleep: item.sleep || 0,
-        water: item.water || 0,
-        weight: item.weight || 0
-      }));
+      const list = res.data
+        .map((item) => ({
+          _id: item._id,
+          user: item.user || "unknown",
+          email: (item.user || "").replace("-token", ""),
+          date: item.date || "",
+          steps: item.steps || 0,
+          sleep: item.sleep || 0,
+          water: item.water || 0,
+          weight: item.weight || 0
+        }))
+        // ✅ 时间排序：新 → 旧
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
 
       setRecords(list);
     } catch {
@@ -34,6 +38,17 @@ export default function AdminRecords() {
     setRecords(records.filter((item) => item._id !== id));
   };
 
+  // ✅ 搜索过滤
+  const filteredRecords = records.filter((item) => {
+    const id = item.email ? item.email.split("@")[0] : "";
+    const email = item.email || "";
+
+    return (
+      id.toLowerCase().includes(keyword.toLowerCase()) ||
+      email.toLowerCase().includes(keyword.toLowerCase())
+    );
+  });
+
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
       <Topbar />
@@ -43,6 +58,23 @@ export default function AdminRecords() {
           <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>
             健康记录管理
           </h2>
+        </div>
+
+        {/* ✅ 搜索框 */}
+        <div style={{ marginBottom: 16 }}>
+          <input
+            type="text"
+            placeholder="搜索用户ID或邮箱"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            style={{
+              padding: "10px 14px",
+              width: 260,
+              borderRadius: 10,
+              border: "1px solid #e2e8f0",
+              outline: "none"
+            }}
+          />
         </div>
 
         <div
@@ -75,7 +107,7 @@ export default function AdminRecords() {
             </thead>
 
             <tbody>
-              {records.map((item) => (
+              {filteredRecords.map((item) => (
                 <tr key={item._id} style={{ borderBottom: "1px solid #eef2f7" }}>
                   <td style={{ padding: 14 }}>{item.date}</td>
                   <td style={{ padding: 14 }}>
@@ -106,7 +138,7 @@ export default function AdminRecords() {
             </tbody>
           </table>
 
-          {records.length === 0 && (
+          {filteredRecords.length === 0 && (
             <div style={{ textAlign: "center", padding: 30, color: "#64748b" }}>
               暂无数据
             </div>
