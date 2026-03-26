@@ -10,9 +10,9 @@ export default function AdminUsers() {
     try {
       const res = await API.get("/users");
 
-      // ✅ 关键：按时间倒序（最新在前）
+      
       const sorted = (res.data || []).sort(
-        (a, b) => new Date(b._id) - new Date(a._id)
+        (a, b) => b._id.localeCompare(a._id)
       );
 
       setUsers(sorted);
