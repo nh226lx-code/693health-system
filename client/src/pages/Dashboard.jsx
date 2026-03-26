@@ -739,6 +739,14 @@ export default function Dashboard() {
                         tickLine={false}
                       />
                       <YAxis
+                        yAxisId="left"
+                        tick={{ fill: "#64748b", fontSize: 12 }}
+                        axisLine={{ stroke: "#d9e3f0" }}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
                         tick={{ fill: "#64748b", fontSize: 12 }}
                         axisLine={{ stroke: "#d9e3f0" }}
                         tickLine={false}
@@ -758,6 +766,7 @@ export default function Dashboard() {
                         }}
                       />
                       <Line
+                        yAxisId="left"
                         type="monotone"
                         dataKey="步数"
                         name="步数"
@@ -767,6 +776,7 @@ export default function Dashboard() {
                         activeDot={{ r: 6 }}
                       />
                       <Line
+                        yAxisId="right"
                         type="monotone"
                         dataKey="睡眠"
                         name="睡眠"
@@ -776,6 +786,7 @@ export default function Dashboard() {
                         activeDot={{ r: 6 }}
                       />
                       <Line
+                        yAxisId="right"
                         type="monotone"
                         dataKey="饮水"
                         name="饮水"
@@ -785,6 +796,7 @@ export default function Dashboard() {
                         activeDot={{ r: 6 }}
                       />
                       <Line
+                        yAxisId="right"
                         type="monotone"
                         dataKey="体重"
                         name="体重"
