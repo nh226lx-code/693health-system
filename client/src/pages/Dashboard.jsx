@@ -751,6 +751,11 @@ export default function Dashboard() {
                         axisLine={{ stroke: "#d9e3f0" }}
                         tickLine={false}
                       />
+                      <YAxis
+                        yAxisId="sleep"
+                        hide
+                        domain={[0, 12]}
+                      />
                       <Tooltip
                         contentStyle={{
                           borderRadius: 14,
@@ -776,7 +781,7 @@ export default function Dashboard() {
                         activeDot={{ r: 6 }}
                       />
                       <Line
-                        yAxisId="right"
+                        yAxisId="sleep"
                         type="monotone"
                         dataKey="睡眠"
                         name="睡眠"
