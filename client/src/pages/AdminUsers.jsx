@@ -43,7 +43,11 @@ export default function AdminUsers() {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortOrder(field === "_id" ? "desc" : "asc");
+      if (field === "_id") {
+        setSortOrder("desc");
+      } else {
+        setSortOrder("asc");
+      }
     }
   };
 
@@ -77,8 +81,8 @@ export default function AdminUsers() {
         return sortOrder === "asc" ? t1 - t2 : t2 - t1;
       }
 
-      const v1 = String(a[sortField] || "").toLowerCase();
-      const v2 = String(b[sortField] || "").toLowerCase();
+      let v1 = String(a[sortField] || "").toLowerCase();
+      let v2 = String(b[sortField] || "").toLowerCase();
 
       if (v1 < v2) return sortOrder === "asc" ? -1 : 1;
       if (v1 > v2) return sortOrder === "asc" ? 1 : -1;
@@ -93,6 +97,12 @@ export default function AdminUsers() {
   useEffect(() => {
     setCurrentPage(1);
   }, [keyword, sortField, sortOrder]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const pagedUsers = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -111,20 +121,55 @@ export default function AdminUsers() {
 
     const csvContent = [headers, ...rows]
       .map((row) =>
-        row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")
+        row
+          .map((cell) => {
+            const value = cell ?? "";
+            const text = String(value).replace(/"/g, '""');
+            return `"${text}"`;
+          })
+          .join(",")
       )
       .join("\n");
 
     const blob = new Blob(["\ufeff" + csvContent], {
       type: "text/csv;charset=utf-8;"
     });
-
     const url = window.URL.createObjectURL(blob);
+
     const a = document.createElement("a");
     a.href = url;
     a.download = "users_data.csv";
     a.click();
+
     window.URL.revokeObjectURL(url);
+  };
+
+  const parseCSVLine = (line) => {
+    const result = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const next = line[i + 1];
+
+      if (char === '"') {
+        if (inQuotes && next === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === "," && !inQuotes) {
+        result.push(current.trim());
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+
+    result.push(current.trim());
+    return result.map((item) => item.replace(/^"|"$/g, "").trim());
   };
 
   const handleImportUsers = (e) => {
@@ -136,30 +181,104 @@ export default function AdminUsers() {
     reader.onload = async (event) => {
       try {
         const text = String(event.target?.result || "").replace(/^\ufeff/, "");
-        const rows = text.split(/\r?\n/).filter(Boolean);
+        const rows = text
+          .split(/\r?\n/)
+          .map((row) => row.trim())
+          .filter(Boolean);
 
-        const tasks = [];
+        if (rows.length <= 1) {
+          alert("导入失败，请检查CSV格式");
+          e.target.value = "";
+          return;
+        }
+
+        const header = parseCSVLine(rows[0]).map((item) => item.toLowerCase());
+
+        const isUserOnlyTemplate =
+          header.includes("邮箱") &&
+          !header.includes("日期");
+
+        const isUserWithReportTemplate =
+          header.includes("邮箱") &&
+          header.includes("日期");
+
+        let successCount = 0;
 
         for (let i = 1; i < rows.length; i++) {
-          const cols = rows[i].split(",");
-          const email = (cols[0] || "").trim();
+          const cols = parseCSVLine(rows[i]);
+          if (!cols.length) continue;
+
+          if (isUserOnlyTemplate) {
+            const email = String(cols[0] || "").trim();
+            const username = String(cols[1] || "").trim();
+
+            if (!email) continue;
+
+            await API.post("/users", {
+              email,
+              username: username || email.split("@")[0],
+              password: "123456",
+              role: "user"
+            }).catch(() => {});
+
+            successCount++;
+            continue;
+          }
+
+          if (isUserWithReportTemplate) {
+            const email = String(cols[0] || "").trim();
+            const username = String(cols[1] || "").trim();
+            const date = String(cols[2] || "").trim();
+            const steps = cols[3] || 0;
+            const sleep = cols[4] || 0;
+            const water = cols[5] || 0;
+            const weight = cols[6] || 0;
+
+            if (!email) continue;
+
+            await API.post("/users", {
+              email,
+              username: username || email.split("@")[0],
+              password: "123456",
+              role: "user"
+            }).catch(() => {});
+
+            if (date) {
+              await API.post("/health", {
+                user: email,
+                date,
+                steps: Number(steps) || 0,
+                sleep: Number(sleep) || 0,
+                water: Number(water) || 0,
+                weight: Number(weight) || 0
+              }).catch(() => {});
+            }
+
+            successCount++;
+            continue;
+          }
+
+          const email = String(cols[0] || "").trim();
+          const username = String(cols[1] || "").trim();
 
           if (!email) continue;
 
-          tasks.push(
-            API.post("/users", {
-              email,
-              username: email.split("@")[0],
-              password: "123456",
-              role: "user"
-            }).catch(() => {})
-          );
+          await API.post("/users", {
+            email,
+            username: username || email.split("@")[0],
+            password: "123456",
+            role: "user"
+          }).catch(() => {});
+
+          successCount++;
         }
 
-        await Promise.all(tasks);
         await fetchUsers();
         window.dispatchEvent(new Event("storage"));
-      } catch {}
+        alert(`导入成功，共 ${successCount} 条`);
+      } catch {
+        alert("导入失败，请检查CSV格式");
+      }
 
       e.target.value = "";
     };
@@ -167,7 +286,7 @@ export default function AdminUsers() {
     reader.readAsText(file);
   };
 
-  const btn = {
+  const btnBase = {
     height: 42,
     padding: "0 18px",
     borderRadius: 12,
@@ -177,7 +296,8 @@ export default function AdminUsers() {
     fontWeight: 700,
     display: "inline-flex",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    whiteSpace: "nowrap"
   };
 
   return (
@@ -191,8 +311,8 @@ export default function AdminUsers() {
             justifyContent: "space-between",
             alignItems: "center",
             marginBottom: 22,
-            flexWrap: "wrap",
-            gap: 14
+            gap: 14,
+            flexWrap: "wrap"
           }}
         >
           <h2 style={{ margin: 0, fontSize: 30, fontWeight: 800 }}>
@@ -220,7 +340,13 @@ export default function AdminUsers() {
               }}
             />
 
-            <button style={{ ...btn, background: "#2563eb", color: "#fff" }}>
+            <button
+              style={{
+                ...btnBase,
+                background: "#2563eb",
+                color: "#fff"
+              }}
+            >
               搜索
             </button>
 
@@ -233,14 +359,24 @@ export default function AdminUsers() {
             />
 
             <label htmlFor="import-user">
-              <span style={{ ...btn, background: "#2563eb", color: "#fff" }}>
+              <span
+                style={{
+                  ...btnBase,
+                  background: "#2563eb",
+                  color: "#fff"
+                }}
+              >
                 导入用户
               </span>
             </label>
 
             <button
               onClick={exportCSV}
-              style={{ ...btn, background: "#16a34a", color: "#fff" }}
+              style={{
+                ...btnBase,
+                background: "#16a34a",
+                color: "#fff"
+              }}
             >
               导出用户
             </button>
@@ -266,15 +402,24 @@ export default function AdminUsers() {
               <tr style={{ background: "#f8fafc" }}>
                 <th style={{ padding: 16 }}>序号</th>
 
-                <th style={{ padding: 16, cursor: "pointer" }} onClick={() => handleSort("_id")}>
+                <th
+                  style={{ padding: 16, cursor: "pointer" }}
+                  onClick={() => handleSort("_id")}
+                >
                   日期 {getSortIcon("_id")}
                 </th>
 
-                <th style={{ padding: 16, cursor: "pointer" }} onClick={() => handleSort("username")}>
+                <th
+                  style={{ padding: 16, cursor: "pointer" }}
+                  onClick={() => handleSort("username")}
+                >
                   用户ID {getSortIcon("username")}
                 </th>
 
-                <th style={{ padding: 16, cursor: "pointer" }} onClick={() => handleSort("email")}>
+                <th
+                  style={{ padding: 16, cursor: "pointer" }}
+                  onClick={() => handleSort("email")}
+                >
                   邮箱 {getSortIcon("email")}
                 </th>
 

@@ -28,7 +28,8 @@ export default function AdminRecords() {
 
       const list = (res.data || []).map((item) => {
         const rawUser = item.user || "";
-        const email = typeof rawUser === "string" ? rawUser.replace(/-token$/i, "") : "";
+        const email =
+          typeof rawUser === "string" ? rawUser.replace(/-token$/i, "") : "";
 
         return {
           _id: item._id,
@@ -266,7 +267,7 @@ export default function AdminRecords() {
           header.includes("日期") &&
           header.includes("邮箱");
 
-        const taskList = [];
+        let successCount = 0;
 
         for (let i = 1; i < rows.length; i++) {
           const cols = parseCSVLine(rows[i]);
@@ -290,38 +291,43 @@ export default function AdminRecords() {
             weight = cols[7] || 0;
           } else {
             email = String(cols[0] || "").trim();
-            username = String(cols[1] || "").trim();
-            date = String(cols[2] || "").trim();
-            steps = cols[3] || 0;
-            sleep = cols[4] || 0;
-            water = cols[5] || 0;
-            weight = cols[6] || 0;
+
+            if (String(cols[2] || "").trim().match(/^\d{4}-\d{2}-\d{2}$/)) {
+              username = String(cols[1] || "").trim();
+              date = String(cols[2] || "").trim();
+              steps = cols[3] || 0;
+              sleep = cols[4] || 0;
+              water = cols[5] || 0;
+              weight = cols[6] || 0;
+            } else {
+              username = email.split("@")[0];
+              date = String(cols[1] || "").trim();
+              steps = cols[2] || 0;
+              sleep = cols[3] || 0;
+              water = cols[4] || 0;
+              weight = cols[5] || 0;
+            }
           }
 
           if (!email || !date) continue;
 
-          taskList.push(
-            (async () => {
-              await createUserIfNeeded(email, username);
+          await createUserIfNeeded(email, username);
 
-await createRecord({
-  user: email + "-token",
-  date: formatDateText(date),
-                 date: formatDateText(date),
-                steps: Number(steps) || 0,
-                sleep: Number(sleep) || 0,
-                water: Number(water) || 0,
-                weight: Number(weight) || 0
-              });
-            })()
-          );
+          await createRecord({
+            user: email,
+            date: formatDateText(date),
+            steps: Number(steps) || 0,
+            sleep: Number(sleep) || 0,
+            water: Number(water) || 0,
+            weight: Number(weight) || 0
+          });
+
+          successCount++;
         }
 
-        await Promise.all(taskList);
         await fetchRecords();
         window.dispatchEvent(new Event("storage"));
-
-        alert("导入完成");
+        alert(`导入成功，共 ${successCount} 条`);
       } catch {
         alert("导入失败，请检查CSV格式");
       }
@@ -622,7 +628,14 @@ await createRecord({
                         {item.username}
                       </span>
                     </td>
-                    <td style={{ ...tdStyle, maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <td
+                      style={{
+                        ...tdStyle,
+                        maxWidth: 240,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis"
+                      }}
+                    >
                       {item.email}
                     </td>
                     <td style={tdStyle}>{item.steps}</td>
