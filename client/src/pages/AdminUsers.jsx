@@ -37,7 +37,12 @@ export default function AdminUsers() {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortOrder("asc");
+
+      if (field === "_id") {
+        setSortOrder("desc");
+      } else {
+        setSortOrder("asc");
+      }
     }
   };
 
@@ -204,15 +209,34 @@ export default function AdminUsers() {
             <thead>
               <tr style={{ background: "#f8fafc" }}>
                 <th style={{ padding: 14 }}>序号</th>
-                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("username")}>
+
+                {/* 新增：日期排序 */}
+                <th
+                  style={{ padding: 14, cursor: "pointer" }}
+                  onClick={() => handleSort("_id")}
+                >
+                  日期 {getSortIcon("_id")}
+                </th>
+
+                <th
+                  style={{ padding: 14, cursor: "pointer" }}
+                  onClick={() => handleSort("username")}
+                >
                   用户ID {getSortIcon("username")}
                 </th>
-                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("email")}>
+
+                <th
+                  style={{ padding: 14, cursor: "pointer" }}
+                  onClick={() => handleSort("email")}
+                >
                   邮箱 {getSortIcon("email")}
                 </th>
-                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("role")}>
-                  角色 {getSortIcon("role")}
+
+                {/* 角色不排序 */}
+                <th style={{ padding: 14 }}>
+                  角色
                 </th>
+
                 <th style={{ padding: 14 }}>操作</th>
               </tr>
             </thead>
@@ -223,11 +247,18 @@ export default function AdminUsers() {
                   <td style={{ padding: 14 }}>
                     {(currentPage - 1) * pageSize + index + 1}
                   </td>
+
+                  {/* 显示日期（用 _id） */}
+                  <td style={{ padding: 14 }}>{user._id}</td>
+
                   <td style={{ padding: 14 }}>
                     {user.username || (user.email ? user.email.split("@")[0] : "unknown")}
                   </td>
+
                   <td style={{ padding: 14 }}>{user.email}</td>
+
                   <td style={{ padding: 14 }}>{user.role}</td>
+
                   <td style={{ padding: 14 }}>
                     <button
                       onClick={() => handleDelete(user._id)}
