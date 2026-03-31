@@ -277,10 +277,11 @@ export default function AdminRecords() {
 
           try {
             await API.post("/users", {
-              email,
-              username: username || email.split("@")[0],
-              role: "user"
-            });
+  email,
+  username: username || email.split("@")[0],
+  password: "123456",
+  role: "user"
+});
           } catch {}
 
           try {
