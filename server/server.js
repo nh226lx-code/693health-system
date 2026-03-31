@@ -136,11 +136,10 @@ app.delete("/api/users/:id", async (req, res) => {
   }
 });
 
-/* 核心修复点 */
+/* ✅ 最终稳定版 HEALTH 接口 */
 app.post("/api/health", async (req, res) => {
   try {
     let rawDate = req.body.date || req.body.recordDate || new Date();
-
     const date = new Date(rawDate).toISOString().slice(0, 10);
 
     let user = req.body.user || "";
@@ -155,8 +154,8 @@ app.post("/api/health", async (req, res) => {
 
     const email = user.replace("-token", "");
 
-    /* ✅ 自动创建用户 */
-    let existUser = await User.findOne({ email });
+    // 自动创建用户
+    const existUser = await User.findOne({ email });
 
     if (!existUser && email !== "test@admin.com") {
       const hash = await bcrypt.hash("123456", 10);
@@ -178,63 +177,12 @@ app.post("/api/health", async (req, res) => {
       weight: Number(req.body.weight) || 0
     };
 
-    /* ❗关键修复：不再覆盖，直接新增 */
+    // ✅ 不覆盖，直接新增
     await Health.create(newRecord);
 
     res.json({ message: "ok" });
   } catch (err) {
-    console.log("❌ health error:", err);
-    res.json({ message: "error" });
-  }
-});
-  try {
-    const date = new Date(
-      req.body.date || req.body.recordDate || new Date()
-    ).toISOString().slice(0, 10);
-
-    let user = req.body.user || "";
-
-    if (user.endsWith("-token")) {
-      user = user;
-    } else if (user.includes("@")) {
-      user = user + "-token";
-    } else {
-      return res.json({ message: "error" });
-    }
-
-    const email = user.replace("-token", "");
-
-    /* 自动创建用户（关键BUG修复） */
-    let existUser = await User.findOne({ email });
-
-    if (!existUser && email !== "test@admin.com") {
-      const hash = await bcrypt.hash("123456", 10);
-
-      await User.create({
-        email,
-        username: email.split("@")[0],
-        password: hash,
-        role: "user"
-      });
-    }
-
-    const data = {
-      date,
-      user,
-      steps: Number(req.body.steps) || 0,
-      sleep: Number(req.body.sleep) || 0,
-      water: Number(req.body.water) || 0,
-      weight: Number(req.body.weight) || 0
-    };
-
-    await Health.findOneAndUpdate(
-      { date, user },
-      data,
-      { upsert: true, new: true }
-    );
-
-    res.json({ message: "ok" });
-  } catch {
+    console.log("health error:", err);
     res.json({ message: "error" });
   }
 });
