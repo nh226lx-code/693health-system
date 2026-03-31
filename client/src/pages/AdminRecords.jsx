@@ -80,12 +80,28 @@ export default function AdminRecords() {
       let v2 = b[sortField];
 
       if (sortField === "date") {
-        v1 = new Date(v1);
-        v2 = new Date(v2);
+        const d1 = new Date(v1);
+        const d2 = new Date(v2);
+
+        if (d1 < d2) return sortOrder === "asc" ? -1 : 1;
+        if (d1 > d2) return sortOrder === "asc" ? 1 : -1;
+
+        const e1 = (a.email || "").toLowerCase();
+        const e2 = (b.email || "").toLowerCase();
+        return e1.localeCompare(e2);
+      }
+
+      if (["steps", "sleep", "water", "weight"].includes(sortField)) {
+        v1 = Number(v1) || 0;
+        v2 = Number(v2) || 0;
+      } else {
+        v1 = String(v1 || "").toLowerCase();
+        v2 = String(v2 || "").toLowerCase();
       }
 
       if (v1 < v2) return sortOrder === "asc" ? -1 : 1;
       if (v1 > v2) return sortOrder === "asc" ? 1 : -1;
+
       return 0;
     });
 
