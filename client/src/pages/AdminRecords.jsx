@@ -62,8 +62,11 @@ export default function AdminRecords() {
 
   const filteredRecords = useMemo(() => {
     return records.filter((item) => {
-      const id = item.email ? item.email.split("@")[0] : "";
       const email = item.email || "";
+
+      if (email.toLowerCase().includes("admin")) return false;
+
+      const id = email ? email.split("@")[0] : "";
 
       return (
         id.toLowerCase().includes(keyword.toLowerCase()) ||
@@ -171,7 +174,9 @@ export default function AdminRecords() {
         for (let row of rows) {
           if (!row.trim()) continue;
 
-          const [email, username, date, steps, sleep, water, weight] = row.split(",");
+          const [email, username, date, steps, sleep, water, weight] = row
+            .split(",")
+            .map((item) => item.trim().replace(/^"|"$/g, ""));
 
           if (!email || !date) continue;
 
@@ -185,7 +190,7 @@ export default function AdminRecords() {
 
           try {
             await API.post("/health", {
-              user: email,
+              user: email + "-token",
               date,
               steps: Number(steps),
               sleep: Number(sleep),
@@ -196,7 +201,7 @@ export default function AdminRecords() {
         }
 
         alert("导入完成");
-        fetchRecords();
+        await fetchRecords();
       } catch {
         alert("导入失败，请检查CSV格式");
       }
