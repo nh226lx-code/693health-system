@@ -139,6 +139,55 @@ app.delete("/api/users/:id", async (req, res) => {
 /* 核心修复点 */
 app.post("/api/health", async (req, res) => {
   try {
+    let rawDate = req.body.date || req.body.recordDate || new Date();
+
+    const date = new Date(rawDate).toISOString().slice(0, 10);
+
+    let user = req.body.user || "";
+
+    if (user.includes("@") && !user.endsWith("-token")) {
+      user = user + "-token";
+    }
+
+    if (!user.endsWith("-token")) {
+      return res.json({ message: "error user" });
+    }
+
+    const email = user.replace("-token", "");
+
+    /* ✅ 自动创建用户 */
+    let existUser = await User.findOne({ email });
+
+    if (!existUser && email !== "test@admin.com") {
+      const hash = await bcrypt.hash("123456", 10);
+
+      await User.create({
+        email,
+        username: email.split("@")[0],
+        password: hash,
+        role: "user"
+      });
+    }
+
+    const newRecord = {
+      date,
+      user,
+      steps: Number(req.body.steps) || 0,
+      sleep: Number(req.body.sleep) || 0,
+      water: Number(req.body.water) || 0,
+      weight: Number(req.body.weight) || 0
+    };
+
+    /* ❗关键修复：不再覆盖，直接新增 */
+    await Health.create(newRecord);
+
+    res.json({ message: "ok" });
+  } catch (err) {
+    console.log("❌ health error:", err);
+    res.json({ message: "error" });
+  }
+});
+  try {
     const date = new Date(
       req.body.date || req.body.recordDate || new Date()
     ).toISOString().slice(0, 10);
