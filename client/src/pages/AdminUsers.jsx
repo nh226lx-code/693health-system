@@ -26,6 +26,12 @@ export default function AdminUsers() {
     return text;
   };
 
+  const safeEmail = (value) => {
+    let v = cleanEmail(value);
+    v = v.replace(/[^a-zA-Z0-9@._-]/g, "");
+    return v;
+  };
+
   const fetchUsers = async () => {
     try {
       const res = await API.get("/users?_t=" + Date.now());
@@ -37,14 +43,18 @@ export default function AdminUsers() {
 
       const list = res.data
         .map((u) => {
-          const email = cleanEmail(u.email || "");
+          const email = safeEmail(u.email || "");
+
           return {
             ...u,
             email,
             username: u.username || (email ? email.split("@")[0] : "")
           };
         })
-        .filter((u) => u.email);
+        .filter((u) => {
+          const e = u.email || "";
+          return e && e.includes("@") && e.includes(".");
+        });
 
       setUsers(list);
     } catch {
@@ -95,7 +105,7 @@ export default function AdminUsers() {
     return users.filter((u) => {
       if (String(u.role || "").toLowerCase() === "admin") return false;
 
-      const email = cleanEmail(u.email || "").toLowerCase();
+      const email = safeEmail(u.email || "").toLowerCase();
       const username = String(u.username || "").toLowerCase();
 
       if (!email) return false;
@@ -116,12 +126,12 @@ export default function AdminUsers() {
 
       let v1 =
         sortField === "email"
-          ? cleanEmail(a[sortField] || "").toLowerCase()
+          ? safeEmail(a[sortField] || "").toLowerCase()
           : String(a[sortField] || "").toLowerCase();
 
       let v2 =
         sortField === "email"
-          ? cleanEmail(b[sortField] || "").toLowerCase()
+          ? safeEmail(b[sortField] || "").toLowerCase()
           : String(b[sortField] || "").toLowerCase();
 
       if (v1 < v2) return sortOrder === "asc" ? -1 : 1;
@@ -154,8 +164,8 @@ export default function AdminUsers() {
 
     const rows = sortedUsers.map((user, i) => [
       i + 1,
-      user.username || (user.email ? cleanEmail(user.email).split("@")[0] : "unknown"),
-      cleanEmail(user.email || ""),
+      user.username || (user.email ? safeEmail(user.email).split("@")[0] : "unknown"),
+      safeEmail(user.email || ""),
       user.role || ""
     ]);
 
@@ -184,34 +194,6 @@ export default function AdminUsers() {
     window.URL.revokeObjectURL(url);
   };
 
-  const parseCSVLine = (line) => {
-    const result = [];
-    let current = "";
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      const next = line[i + 1];
-
-      if (char === '"') {
-        if (inQuotes && next === '"') {
-          current += '"';
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === "," && !inQuotes) {
-        result.push(current.trim());
-        current = "";
-      } else {
-        current += char;
-      }
-    }
-
-    result.push(current.trim());
-    return result.map((item) => item.replace(/^"|"$/g, "").trim());
-  };
-
   const handleImportUsers = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -235,73 +217,12 @@ export default function AdminUsers() {
           return;
         }
 
-        const header = parseCSVLine(rows[0]).map((item) => item.toLowerCase());
-
-        const isUserOnlyTemplate =
-          header.includes("邮箱") &&
-          !header.includes("日期");
-
-        const isUserWithReportTemplate =
-          header.includes("邮箱") &&
-          header.includes("日期");
-
         let successCount = 0;
 
         for (let i = 1; i < rows.length; i++) {
-          const cols = parseCSVLine(rows[i]);
-          if (!cols.length) continue;
+          const cols = rows[i].split(",");
 
-          if (isUserOnlyTemplate) {
-            const email = cleanEmail(cols[0] || "");
-            const username = String(cols[1] || "").trim();
-
-            if (!email) continue;
-
-            await API.post("/users", {
-              email,
-              username: username || email.split("@")[0],
-              password: "123456",
-              role: "user"
-            }).catch(() => {});
-
-            successCount++;
-            continue;
-          }
-
-          if (isUserWithReportTemplate) {
-            const email = cleanEmail(cols[0] || "");
-            const username = String(cols[1] || "").trim();
-            const date = String(cols[2] || "").trim();
-            const steps = cols[3] || 0;
-            const sleep = cols[4] || 0;
-            const water = cols[5] || 0;
-            const weight = cols[6] || 0;
-
-            if (!email) continue;
-
-            await API.post("/users", {
-              email,
-              username: username || email.split("@")[0],
-              password: "123456",
-              role: "user"
-            }).catch(() => {});
-
-            if (date) {
-              await API.post("/health", {
-                user: email,
-                date,
-                steps: Number(steps) || 0,
-                sleep: Number(sleep) || 0,
-                water: Number(water) || 0,
-                weight: Number(weight) || 0
-              }).catch(() => {});
-            }
-
-            successCount++;
-            continue;
-          }
-
-          const email = cleanEmail(cols[0] || "");
+          const email = safeEmail(cols[0] || "");
           const username = String(cols[1] || "").trim();
 
           if (!email) continue;
@@ -317,7 +238,6 @@ export default function AdminUsers() {
         }
 
         await fetchUsers();
-        window.dispatchEvent(new Event("storage"));
         alert(`导入成功，共 ${successCount} 条`);
       } catch {
         alert("导入失败，请检查CSV格式");
@@ -445,26 +365,11 @@ export default function AdminUsers() {
               <tr style={{ background: "#f8fafc" }}>
                 <th style={{ padding: 16 }}>序号</th>
 
-                <th
-                  style={{ padding: 16, cursor: "pointer" }}
-                  onClick={() => handleSort("_id")}
-                >
-                  日期 {getSortIcon("_id")}
-                </th>
+                <th style={{ padding: 16 }}>日期</th>
 
-                <th
-                  style={{ padding: 16, cursor: "pointer" }}
-                  onClick={() => handleSort("username")}
-                >
-                  用户ID {getSortIcon("username")}
-                </th>
+                <th style={{ padding: 16 }}>用户ID</th>
 
-                <th
-                  style={{ padding: 16, cursor: "pointer" }}
-                  onClick={() => handleSort("email")}
-                >
-                  邮箱 {getSortIcon("email")}
-                </th>
+                <th style={{ padding: 16 }}>邮箱</th>
 
                 <th style={{ padding: 16 }}>角色</th>
 
@@ -486,10 +391,12 @@ export default function AdminUsers() {
                     <td style={{ padding: 16 }}>{date}</td>
 
                     <td style={{ padding: 16 }}>
-                      {user.username || (user.email ? cleanEmail(user.email).split("@")[0] : "unknown")}
+                      {user.username}
                     </td>
 
-                    <td style={{ padding: 16 }}>{cleanEmail(user.email)}</td>
+                    <td style={{ padding: 16 }}>
+                      {safeEmail(user.email)}
+                    </td>
 
                     <td style={{ padding: 16 }}>{user.role}</td>
 
