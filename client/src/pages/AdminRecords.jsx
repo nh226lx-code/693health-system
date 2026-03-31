@@ -372,22 +372,17 @@ export default function AdminRecords() {
             />
 
             <label htmlFor="import-file">
-              <span
-                style={{
-                  display: "inline-block",
-                  padding: "10px 16px",
-                  background: "#2563eb",
-                  color: "#fff",
-                  borderRadius: 10,
-                  cursor: "pointer",
-                  fontWeight: 500,
-                  fontSize: 14,
-                  lineHeight: "20px"
-                }}
-              >
-                导入数据
-              </span>
-            </label>
+  <span
+    style={{
+      ...actionButtonStyle,
+      display: "inline-block",
+      background: "#2563eb",
+      color: "#fff"
+    }}
+  >
+    导入数据
+  </span>
+</label>
 
             <button
               onClick={exportCSV}
