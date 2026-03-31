@@ -43,7 +43,7 @@ const clean = (val) => {
   v = v.replace(/[\u0000-\u001f]/g, "").trim();
   if (v.includes(",")) v = v.split(",")[0].trim();
   if (v.includes("PK")) return "";
-  if (/[^\x00-\x7F]/.test(v)) return "";
+  if (/[^\x20-\x7E]/.test(v)) return "";
   return v;
 };
 
@@ -115,7 +115,8 @@ app.post("/api/auth/login", async (req, res) => {
 app.get("/api/users", async (req, res) => {
   try {
     const users = await User.find().select("-password");
-    res.json(users);
+    const cleanUsers = users.filter(u => u.email && !u.email.includes("PK") && !/[^\x20-\x7E]/.test(u.email));
+    res.json(cleanUsers);
   } catch {
     res.json([]);
   }
@@ -189,8 +190,7 @@ app.post("/api/admin/import-users", async (req, res) => {
     }
 
     res.json({ message: `导入成功 ${count} 条` });
-  } catch (err) {
-    console.log(err);
+  } catch {
     res.json({ message: "导入失败" });
   }
 });
@@ -208,7 +208,8 @@ app.delete("/api/users/:id", async (req, res) => {
 app.get("/api/health", async (req, res) => {
   try {
     const data = await Health.find().sort({ date: -1 });
-    res.json(data);
+    const cleanData = data.filter(r => r.user && !r.user.includes("PK") && !/[^\x20-\x7E]/.test(r.user));
+    res.json(cleanData);
   } catch {
     res.json([]);
   }
