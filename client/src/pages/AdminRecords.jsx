@@ -304,8 +304,8 @@ export default function AdminRecords() {
             (async () => {
               await createUserIfNeeded(email, username);
 
-              await createRecord({
-                user: `${email}-token`,
+await createRecord({
+  user: email,
                 date: formatDateText(date),
                 steps: Number(steps) || 0,
                 sleep: Number(sleep) || 0,
