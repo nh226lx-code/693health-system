@@ -173,11 +173,7 @@ export default function AdminUsers() {
 
         await fetchUsers();
         setTimeout(fetchUsers, 500);
-
-        alert("导入成功");
-      } catch {
-        alert("导入失败");
-      }
+      } catch {}
 
       e.target.value = "";
     };
@@ -223,7 +219,8 @@ export default function AdminUsers() {
                 background: "#2563eb",
                 color: "#fff",
                 border: "none",
-                borderRadius: 10
+                borderRadius: 10,
+                fontSize: 14
               }}
             >
               搜索
@@ -244,7 +241,8 @@ export default function AdminUsers() {
                   background: "#2563eb",
                   color: "#fff",
                   borderRadius: 10,
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  fontSize: 14
                 }}
               >
                 导入用户
@@ -258,7 +256,8 @@ export default function AdminUsers() {
                 background: "#16a34a",
                 color: "#fff",
                 border: "none",
-                borderRadius: 10
+                borderRadius: 10,
+                fontSize: 14
               }}
             >
               导出用户

@@ -278,7 +278,7 @@ export default function AdminRecords() {
 
           try {
             await API.post("/health", {
-              user: `${email}-token`,
+              user: `${email}-token`.trim(),
               date,
               steps: Number(steps) || 0,
               sleep: Number(sleep) || 0,
@@ -289,7 +289,7 @@ export default function AdminRecords() {
         }
 
         await fetchRecords();
-        setTimeout(fetchRecords, 500);
+        setTimeout(() => fetchRecords(), 500);
 
         alert("导入完成");
       } catch {
