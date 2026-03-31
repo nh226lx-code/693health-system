@@ -12,6 +12,17 @@ export default function AdminRecords() {
 
   const pageSize = 20;
 
+  const cleanEmail = (value) => {
+    if (!value) return "";
+    let text = String(value).trim().replace(/-token$/i, "");
+    text = text.replace(/^"+|"+$/g, "").trim();
+    text = text.replace(/[\u0000-\u001f]/g, "").trim();
+    if (text.includes(",")) {
+      text = text.split(",")[0].trim();
+    }
+    return text;
+  };
+
   const formatDateText = (value) => {
     if (!value) return "";
     const text = String(value).trim();
@@ -26,14 +37,17 @@ export default function AdminRecords() {
       setLoading(true);
       const res = await API.get("/health?_t=" + Date.now());
 
-      const list = (res.data || []).map((item) => {
-        const rawUser = item.user || "";
-        const email =
-          typeof rawUser === "string" ? rawUser.replace(/-token$/i, "") : "";
+      if (!Array.isArray(res.data)) {
+        setRecords([]);
+        return;
+      }
+
+      const list = res.data.map((item) => {
+        const email = cleanEmail(item.user || "");
 
         return {
           _id: item._id,
-          user: rawUser || "unknown",
+          user: email || "unknown",
           email,
           username: email ? email.split("@")[0] : "unknown",
           date: formatDateText(item.date || ""),
@@ -53,6 +67,7 @@ export default function AdminRecords() {
   };
 
   useEffect(() => {
+    setRecords([]);
     fetchRecords();
   }, []);
 
@@ -63,6 +78,7 @@ export default function AdminRecords() {
     try {
       await API.delete(`/health/${id}`);
       await fetchRecords();
+      window.dispatchEvent(new Event("storage"));
     } catch {
       alert("删除失败");
     }
@@ -97,6 +113,7 @@ export default function AdminRecords() {
       const email = String(item.email || "").toLowerCase();
       const userId = String(item.username || "").toLowerCase();
 
+      if (!email) return false;
       if (email === "test@admin.com") {
         return false;
       }
@@ -223,22 +240,50 @@ export default function AdminRecords() {
   };
 
   const createUserIfNeeded = async (email, username) => {
-    if (!email || String(email).toLowerCase() === "test@admin.com") return;
+    const clean = cleanEmail(email);
+    if (!clean || String(clean).toLowerCase() === "test@admin.com") return;
 
     try {
       await API.post("/users", {
-        email: String(email).trim(),
-        username: username || String(email).split("@")[0],
+        email: clean,
+        username: username || clean.split("@")[0],
         password: "123456",
         role: "user"
       });
     } catch {}
   };
 
-  const createRecord = async (payload) => {
+  const createRecordIfNeeded = async (payload) => {
+    const email = cleanEmail(payload.user);
+    const date = formatDateText(payload.date);
+
+    if (!email || !date) return false;
+
+    const exists = records.some(
+      (item) =>
+        cleanEmail(item.email) === email &&
+        formatDateText(item.date) === date &&
+        Number(item.steps) === (Number(payload.steps) || 0) &&
+        Number(item.sleep) === (Number(payload.sleep) || 0) &&
+        Number(item.water) === (Number(payload.water) || 0) &&
+        Number(item.weight) === (Number(payload.weight) || 0)
+    );
+
+    if (exists) return false;
+
     try {
-      await API.post("/health", payload);
-    } catch {}
+      await API.post("/health", {
+        user: email,
+        date,
+        steps: Number(payload.steps) || 0,
+        sleep: Number(payload.sleep) || 0,
+        water: Number(payload.water) || 0,
+        weight: Number(payload.weight) || 0
+      });
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   const handleImport = (e) => {
@@ -250,8 +295,8 @@ export default function AdminRecords() {
     reader.onload = async (event) => {
       try {
         const text = String(event.target?.result || "")
-  .replace(/^\ufeff/, "")
-  .replace(/�/g, "");
+          .replace(/^\ufeff/, "")
+          .replace(/�/g, "");
         const rows = text
           .split(/\r?\n/)
           .map((row) => row.trim())
@@ -284,7 +329,7 @@ export default function AdminRecords() {
           let weight = 0;
 
           if (isExportTemplate) {
-            email = String(cols[3] || "").trim();
+            email = cleanEmail(cols[3] || "");
             username = String(cols[2] || "").trim();
             date = String(cols[1] || "").trim();
             steps = cols[4] || 0;
@@ -292,7 +337,7 @@ export default function AdminRecords() {
             water = cols[6] || 0;
             weight = cols[7] || 0;
           } else {
-            email = String(cols[0] || "").trim();
+            email = cleanEmail(cols[0] || "");
 
             if (String(cols[2] || "").trim().match(/^\d{4}-\d{2}-\d{2}$/)) {
               username = String(cols[1] || "").trim();
@@ -302,7 +347,7 @@ export default function AdminRecords() {
               water = cols[5] || 0;
               weight = cols[6] || 0;
             } else {
-              username = email.split("@")[0];
+              username = email ? email.split("@")[0] : "";
               date = String(cols[1] || "").trim();
               steps = cols[2] || 0;
               sleep = cols[3] || 0;
@@ -315,7 +360,7 @@ export default function AdminRecords() {
 
           await createUserIfNeeded(email, username);
 
-          await createRecord({
+          const added = await createRecordIfNeeded({
             user: email,
             date: formatDateText(date),
             steps: Number(steps) || 0,
@@ -324,7 +369,9 @@ export default function AdminRecords() {
             weight: Number(weight) || 0
           });
 
-          successCount++;
+          if (added) {
+            successCount++;
+          }
         }
 
         await fetchRecords();

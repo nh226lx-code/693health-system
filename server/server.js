@@ -101,8 +101,8 @@ app.post("/api/users", async (req, res) => {
     const hash = await bcrypt.hash(password || "123456", 10);
 
     const user = await User.create({
-      email,
-      username: username || email.split("@")[0],
+      email: String(email).trim(),
+      username: username || String(email).split("@")[0],
       password: hash,
       role: role === "admin" ? "admin" : "user"
     });
@@ -122,7 +122,7 @@ app.delete("/api/users/:id", async (req, res) => {
     const user = await User.findByIdAndDelete(req.params.id);
 
     if (user && user.email) {
-      await Health.deleteMany({ user: user.email + "-token" });
+      await Health.deleteMany({ user: String(user.email).trim() });
     }
 
     res.json({ message: "ok" });
@@ -131,24 +131,26 @@ app.delete("/api/users/:id", async (req, res) => {
   }
 });
 
-/* 修复：导入写入 + 自动建用户 */
 app.post("/api/health", async (req, res) => {
   try {
     const date = new Date(
       req.body.date || req.body.recordDate || new Date()
     ).toISOString().slice(0, 10);
 
-    let user = req.body.user || "";
+    let user = String(req.body.user || "").trim();
 
-    if (user.includes("@") && !user.endsWith("-token")) {
-      user = user + "-token";
+    user = user.replace(/-token$/i, "").trim();
+    user = user.replace(/^"+|"+$/g, "").trim();
+    user = user.replace(/[\u0000-\u001f]/g, "").trim();
+    if (user.includes(",")) {
+      user = user.split(",")[0].trim();
     }
 
-    if (!user.endsWith("-token")) {
+    if (!user.includes("@")) {
       return res.json({ message: "error" });
     }
 
-    const email = user.replace("-token", "");
+    const email = user;
 
     const existUser = await User.findOne({ email });
 
@@ -165,7 +167,7 @@ app.post("/api/health", async (req, res) => {
 
     await Health.create({
       date,
-      user,
+      user: email,
       steps: Number(req.body.steps) || 0,
       sleep: Number(req.body.sleep) || 0,
       water: Number(req.body.water) || 0,
@@ -178,7 +180,6 @@ app.post("/api/health", async (req, res) => {
   }
 });
 
-/* 修复：后台永远能看到数据 */
 app.get("/api/health", async (req, res) => {
   try {
     const data = await Health.find().sort({ date: -1 });

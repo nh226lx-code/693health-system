@@ -13,24 +13,49 @@ export default function AdminUsers() {
 
   const pageSize = 20;
 
+  const cleanEmail = (value) => {
+    if (!value) return "";
+    let text = String(value).trim();
+    text = text.replace(/-token$/i, "");
+    text = text.replace(/^"+|"+$/g, "").trim();
+    text = text.replace(/[\u0000-\u001f]/g, "").trim();
+    text = text.replace(/\s+/g, "");
+    if (text.includes(",")) {
+      text = text.split(",")[0].trim();
+    }
+    return text;
+  };
+
   const fetchUsers = async () => {
     try {
-    const res = await API.get("/users?_t=" + Date.now());
+      const res = await API.get("/users?_t=" + Date.now());
 
-if (Array.isArray(res.data)) {
-  setUsers(res.data);
-} else {
-  setUsers([]);
-}
+      if (!Array.isArray(res.data)) {
+        setUsers([]);
+        return;
+      }
+
+      const list = res.data
+        .map((u) => {
+          const email = cleanEmail(u.email || "");
+          return {
+            ...u,
+            email,
+            username: u.username || (email ? email.split("@")[0] : "")
+          };
+        })
+        .filter((u) => u.email);
+
+      setUsers(list);
     } catch {
       setUsers([]);
     }
   };
 
   useEffect(() => {
-  setUsers([]);
-  fetchUsers();
-}, []);
+    setUsers([]);
+    fetchUsers();
+  }, []);
 
   const handleDelete = async (id) => {
     const ok = window.confirm("确定删除该用户？");
@@ -70,8 +95,10 @@ if (Array.isArray(res.data)) {
     return users.filter((u) => {
       if (String(u.role || "").toLowerCase() === "admin") return false;
 
-      const email = (u.email || "").toLowerCase();
-      const username = (u.username || "").toLowerCase();
+      const email = cleanEmail(u.email || "").toLowerCase();
+      const username = String(u.username || "").toLowerCase();
+
+      if (!email) return false;
 
       return email.includes(value) || username.includes(value);
     });
@@ -87,8 +114,15 @@ if (Array.isArray(res.data)) {
         return sortOrder === "asc" ? t1 - t2 : t2 - t1;
       }
 
-      let v1 = String(a[sortField] || "").toLowerCase();
-      let v2 = String(b[sortField] || "").toLowerCase();
+      let v1 =
+        sortField === "email"
+          ? cleanEmail(a[sortField] || "").toLowerCase()
+          : String(a[sortField] || "").toLowerCase();
+
+      let v2 =
+        sortField === "email"
+          ? cleanEmail(b[sortField] || "").toLowerCase()
+          : String(b[sortField] || "").toLowerCase();
 
       if (v1 < v2) return sortOrder === "asc" ? -1 : 1;
       if (v1 > v2) return sortOrder === "asc" ? 1 : -1;
@@ -120,8 +154,8 @@ if (Array.isArray(res.data)) {
 
     const rows = sortedUsers.map((user, i) => [
       i + 1,
-      user.username || (user.email ? user.email.split("@")[0] : "unknown"),
-      user.email || "",
+      user.username || (user.email ? cleanEmail(user.email).split("@")[0] : "unknown"),
+      cleanEmail(user.email || ""),
       user.role || ""
     ]);
 
@@ -187,8 +221,9 @@ if (Array.isArray(res.data)) {
     reader.onload = async (event) => {
       try {
         const text = String(event.target?.result || "")
-  .replace(/^\ufeff/, "")
-  .replace(/�/g, "");
+          .replace(/^\ufeff/, "")
+          .replace(/�/g, "");
+
         const rows = text
           .split(/\r?\n/)
           .map((row) => row.trim())
@@ -217,7 +252,7 @@ if (Array.isArray(res.data)) {
           if (!cols.length) continue;
 
           if (isUserOnlyTemplate) {
-            const email = String(cols[0] || "").trim();
+            const email = cleanEmail(cols[0] || "");
             const username = String(cols[1] || "").trim();
 
             if (!email) continue;
@@ -234,7 +269,7 @@ if (Array.isArray(res.data)) {
           }
 
           if (isUserWithReportTemplate) {
-            const email = String(cols[0] || "").trim();
+            const email = cleanEmail(cols[0] || "");
             const username = String(cols[1] || "").trim();
             const date = String(cols[2] || "").trim();
             const steps = cols[3] || 0;
@@ -253,20 +288,20 @@ if (Array.isArray(res.data)) {
 
             if (date) {
               await API.post("/health", {
-  user: email + "-token",
-  date,
-  steps: Number(steps) || 0,
-  sleep: Number(sleep) || 0,
-  water: Number(water) || 0,
-  weight: Number(weight) || 0
-}).catch(() => {});
+                user: email,
+                date,
+                steps: Number(steps) || 0,
+                sleep: Number(sleep) || 0,
+                water: Number(water) || 0,
+                weight: Number(weight) || 0
+              }).catch(() => {});
             }
 
             successCount++;
             continue;
           }
 
-          const email = String(cols[0] || "").split(",")[0].trim();
+          const email = cleanEmail(cols[0] || "");
           const username = String(cols[1] || "").trim();
 
           if (!email) continue;
@@ -451,10 +486,10 @@ if (Array.isArray(res.data)) {
                     <td style={{ padding: 16 }}>{date}</td>
 
                     <td style={{ padding: 16 }}>
-                      {user.username || (user.email ? user.email.split("@")[0] : "unknown")}
+                      {user.username || (user.email ? cleanEmail(user.email).split("@")[0] : "unknown")}
                     </td>
 
-                    <td style={{ padding: 16 }}>{user.email}</td>
+                    <td style={{ padding: 16 }}>{cleanEmail(user.email)}</td>
 
                     <td style={{ padding: 16 }}>{user.role}</td>
 
@@ -476,7 +511,6 @@ if (Array.isArray(res.data)) {
                       </button>
                     </td>
                   </tr>
-
                 );
               })}
             </tbody>
