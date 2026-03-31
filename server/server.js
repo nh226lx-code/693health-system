@@ -74,7 +74,26 @@ app.post("/api/auth/login", async (req, res) => {
 app.get("/api/users", async (req, res) => {
   try {
     const users = await User.find().select("-password");
-    res.json(users);
+
+    const clean = users.map((u) => {
+      let email = String(u.email || "").trim();
+
+      email = email.replace(/-token$/i, "");
+      email = email.replace(/^"+|"+$/g, "").trim();
+      email = email.replace(/[\u0000-\u001f]/g, "").trim();
+
+      if (email.includes(",")) {
+        email = email.split(",")[0].trim();
+      }
+
+      return {
+        ...u.toObject(),
+        email,
+        username: email ? email.split("@")[0] : u.username
+      };
+    });
+
+    res.json(clean);
   } catch {
     res.json([]);
   }
@@ -88,7 +107,13 @@ app.post("/api/users", async (req, res) => {
       return res.json({ message: "fail" });
     }
 
-    const exist = await User.findOne({ email });
+    const cleanEmail = String(email)
+      .trim()
+      .replace(/-token$/i, "")
+      .replace(/^"+|"+$/g, "")
+      .replace(/[\u0000-\u001f]/g, "");
+
+    const exist = await User.findOne({ email: cleanEmail });
 
     if (exist) {
       return res.json({
@@ -101,8 +126,8 @@ app.post("/api/users", async (req, res) => {
     const hash = await bcrypt.hash(password || "123456", 10);
 
     const user = await User.create({
-      email: String(email).trim(),
-      username: username || String(email).split("@")[0],
+      email: cleanEmail,
+      username: username || cleanEmail.split("@")[0],
       password: hash,
       role: role === "admin" ? "admin" : "user"
     });
@@ -142,6 +167,7 @@ app.post("/api/health", async (req, res) => {
     user = user.replace(/-token$/i, "").trim();
     user = user.replace(/^"+|"+$/g, "").trim();
     user = user.replace(/[\u0000-\u001f]/g, "").trim();
+
     if (user.includes(",")) {
       user = user.split(",")[0].trim();
     }
@@ -183,7 +209,25 @@ app.post("/api/health", async (req, res) => {
 app.get("/api/health", async (req, res) => {
   try {
     const data = await Health.find().sort({ date: -1 });
-    res.json(data);
+
+    const clean = data.map((item) => {
+      let user = String(item.user || "").trim();
+
+      user = user.replace(/-token$/i, "");
+      user = user.replace(/^"+|"+$/g, "").trim();
+      user = user.replace(/[\u0000-\u001f]/g, "").trim();
+
+      if (user.includes(",")) {
+        user = user.split(",")[0].trim();
+      }
+
+      return {
+        ...item.toObject(),
+        user
+      };
+    });
+
+    res.json(clean);
   } catch {
     res.json([]);
   }
