@@ -3,12 +3,15 @@ const cors = require("cors");
 const path = require("path");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const XLSX = require("xlsx");
+const fileUpload = require("express-fileupload");
 require("dotenv").config();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(fileUpload());
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
@@ -39,15 +42,20 @@ const clean = (val) => {
   v = v.replace(/^"+|"+$/g, "").trim();
   v = v.replace(/[\u0000-\u001f]/g, "").trim();
   if (v.includes(",")) v = v.split(",")[0].trim();
+  if (v.includes("PK")) return "";
+  if (/[^\x00-\x7F]/.test(v)) return "";
   return v;
 };
 
-/* ===== 强制清洗数据库（启动即执行）===== */
 const fixData = async () => {
   const users = await User.find();
   for (let u of users) {
     const email = clean(u.email);
-    if (email && u.email !== email) {
+    if (!email) {
+      await User.findByIdAndDelete(u._id);
+      continue;
+    }
+    if (u.email !== email) {
       u.email = email;
       u.username = email.split("@")[0];
       await u.save();
@@ -57,7 +65,11 @@ const fixData = async () => {
   const records = await Health.find();
   for (let r of records) {
     const email = clean(r.user);
-    if (email && r.user !== email) {
+    if (!email) {
+      await Health.findByIdAndDelete(r._id);
+      continue;
+    }
+    if (r.user !== email) {
       r.user = email;
       await r.save();
     }
@@ -70,7 +82,6 @@ mongoose.connection.once("open", async () => {
   await fixData();
 });
 
-/* ===== 登录 ===== */
 app.post("/api/auth/login", async (req, res) => {
   try {
     const email = clean(req.body.email);
@@ -101,7 +112,6 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-/* ===== 用户 ===== */
 app.get("/api/users", async (req, res) => {
   try {
     const users = await User.find().select("-password");
@@ -132,6 +142,59 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
+app.post("/api/admin/import-users", async (req, res) => {
+  try {
+    if (!req.files || !req.files.file) {
+      return res.json({ message: "没有文件" });
+    }
+
+    const file = req.files.file;
+
+    let data = [];
+
+    if (file.name.endsWith(".csv")) {
+      const content = file.data.toString("utf8");
+      const lines = content.split("\n");
+
+      for (let i = 1; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (!line) continue;
+
+        const cols = line.split(",");
+        data.push({ email: cols[1] });
+      }
+    } else {
+      const workbook = XLSX.read(file.data, { type: "buffer" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      data = XLSX.utils.sheet_to_json(sheet);
+    }
+
+    let count = 0;
+
+    for (let row of data) {
+      const email = clean(row.email);
+      if (!email) continue;
+
+      const exist = await User.findOne({ email });
+      if (exist) continue;
+
+      await User.create({
+        email,
+        username: email.split("@")[0],
+        password: await bcrypt.hash("123456", 10),
+        role: "user"
+      });
+
+      count++;
+    }
+
+    res.json({ message: `导入成功 ${count} 条` });
+  } catch (err) {
+    console.log(err);
+    res.json({ message: "导入失败" });
+  }
+});
+
 app.delete("/api/users/:id", async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
@@ -142,7 +205,6 @@ app.delete("/api/users/:id", async (req, res) => {
   }
 });
 
-/* ===== 报告 ===== */
 app.get("/api/health", async (req, res) => {
   try {
     const data = await Health.find().sort({ date: -1 });
@@ -195,7 +257,6 @@ app.delete("/api/health/:id", async (req, res) => {
   }
 });
 
-/* ===== 前端 ===== */
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
 app.get("*", (req, res) => {
