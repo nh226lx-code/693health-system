@@ -42,12 +42,42 @@ const clean = (val) => {
   return v;
 };
 
+/* ===== 强制清洗数据库（启动即执行）===== */
+const fixData = async () => {
+  const users = await User.find();
+  for (let u of users) {
+    const email = clean(u.email);
+    if (email && u.email !== email) {
+      u.email = email;
+      u.username = email.split("@")[0];
+      await u.save();
+    }
+  }
+
+  const records = await Health.find();
+  for (let r of records) {
+    const email = clean(r.user);
+    if (email && r.user !== email) {
+      r.user = email;
+      await r.save();
+    }
+  }
+
+  console.log("数据清洗完成");
+};
+
+mongoose.connection.once("open", async () => {
+  await fixData();
+});
+
+/* ===== 登录 ===== */
 app.post("/api/auth/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = clean(req.body.email);
+    const password = req.body.password;
 
-    const user = await User.findOne({ email: clean(email) });
-    if (!user) return res.status(400).json({ message: "用户不存在" });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({});
 
     let ok = false;
 
@@ -57,41 +87,25 @@ app.post("/api/auth/login", async (req, res) => {
       ok = password === user.password;
     }
 
-    if (!ok) return res.status(400).json({ message: "密码错误" });
+    if (!ok) return res.status(400).json({});
 
     const role = user.role === "admin" ? "admin" : "user";
 
-    return res.json({
-      token: role === "admin" ? "admin-token" : user.email + "-token",
+    res.json({
+      token: role === "admin" ? "admin-token" : email + "-token",
       role,
-      userId: user.email
+      userId: email
     });
   } catch {
-    res.status(500).json({});
+    res.json({});
   }
 });
 
+/* ===== 用户 ===== */
 app.get("/api/users", async (req, res) => {
   try {
-    const users = await User.find();
-
-    for (let u of users) {
-      const newEmail = clean(u.email);
-      if (u.email !== newEmail) {
-        u.email = newEmail;
-        u.username = newEmail.split("@")[0];
-        await u.save();
-      }
-    }
-
-    const data = users.map((u) => ({
-      _id: u._id,
-      email: u.email,
-      username: u.username,
-      role: u.role
-    }));
-
-    res.json(data);
+    const users = await User.find().select("-password");
+    res.json(users);
   } catch {
     res.json([]);
   }
@@ -99,8 +113,7 @@ app.get("/api/users", async (req, res) => {
 
 app.post("/api/users", async (req, res) => {
   try {
-    let email = clean(req.body.email);
-
+    const email = clean(req.body.email);
     if (!email) return res.json({});
 
     const exist = await User.findOne({ email });
@@ -122,14 +135,20 @@ app.post("/api/users", async (req, res) => {
 app.delete("/api/users/:id", async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
-
-    if (user) {
-      await Health.deleteMany({ user: user.email });
-    }
-
-    res.json({ ok: true });
+    if (user) await Health.deleteMany({ user: user.email });
+    res.json({});
   } catch {
     res.json({});
+  }
+});
+
+/* ===== 报告 ===== */
+app.get("/api/health", async (req, res) => {
+  try {
+    const data = await Health.find().sort({ date: -1 });
+    res.json(data);
+  } catch {
+    res.json([]);
   }
 });
 
@@ -142,9 +161,8 @@ app.post("/api/health", async (req, res) => {
       req.body.date || new Date()
     ).toISOString().slice(0, 10);
 
-    const existUser = await User.findOne({ email });
-
-    if (!existUser) {
+    const exist = await User.findOne({ email });
+    if (!exist) {
       await User.create({
         email,
         username: email.split("@")[0],
@@ -162,39 +180,22 @@ app.post("/api/health", async (req, res) => {
       weight: Number(req.body.weight) || 0
     });
 
-    res.json({ ok: true });
+    res.json({});
   } catch {
     res.json({});
-  }
-});
-
-app.get("/api/health", async (req, res) => {
-  try {
-    const list = await Health.find().sort({ date: -1 });
-
-    for (let r of list) {
-      const cleanUser = clean(r.user);
-      if (r.user !== cleanUser) {
-        r.user = cleanUser;
-        await r.save();
-      }
-    }
-
-    res.json(list);
-  } catch {
-    res.json([]);
   }
 });
 
 app.delete("/api/health/:id", async (req, res) => {
   try {
     await Health.findByIdAndDelete(req.params.id);
-    res.json({ ok: true });
+    res.json({});
   } catch {
     res.json({});
   }
 });
 
+/* ===== 前端 ===== */
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
 app.get("*", (req, res) => {
