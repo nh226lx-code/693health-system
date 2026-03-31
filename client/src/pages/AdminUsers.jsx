@@ -46,11 +46,12 @@ export default function AdminUsers() {
     }
   };
 
+  // ✅ UI统一（和报告页一致）
   const getSortIcon = (field) => {
     if (sortField === field) {
       return sortOrder === "asc" ? "▲" : "▼";
     }
-    return <span style={{ color: "#cbd5e1" }}>⇅</span>;
+    return "⇅";
   };
 
   const filteredUsers = useMemo(() => {
@@ -69,6 +70,13 @@ export default function AdminUsers() {
     const list = [...filteredUsers];
 
     list.sort((a, b) => {
+      // ✅ 日期排序（用 _id 时间戳）
+      if (sortField === "_id") {
+        const t1 = parseInt(a._id.substring(0, 8), 16);
+        const t2 = parseInt(b._id.substring(0, 8), 16);
+        return sortOrder === "asc" ? t1 - t2 : t2 - t1;
+      }
+
       let v1 = a[sortField] || "";
       let v2 = b[sortField] || "";
 
@@ -210,7 +218,6 @@ export default function AdminUsers() {
               <tr style={{ background: "#f8fafc" }}>
                 <th style={{ padding: 14 }}>序号</th>
 
-                {/* 日期排序 */}
                 <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("_id")}>
                   日期 {getSortIcon("_id")}
                 </th>
@@ -223,52 +230,54 @@ export default function AdminUsers() {
                   邮箱 {getSortIcon("email")}
                 </th>
 
-                {/* 角色不排序 */}
-                <th style={{ padding: 14 }}>
-                  角色
-                </th>
+                <th style={{ padding: 14 }}>角色</th>
 
                 <th style={{ padding: 14 }}>操作</th>
               </tr>
             </thead>
 
             <tbody>
-              {pagedUsers.map((user, index) => (
-                <tr key={user._id} style={{ borderBottom: "1px solid #eef2f7" }}>
-                  <td style={{ padding: 14 }}>
-                    {(currentPage - 1) * pageSize + index + 1}
-                  </td>
+              {pagedUsers.map((user, index) => {
+                // ✅ 从 _id 解析真实日期
+                const timestamp = parseInt(user._id.substring(0, 8), 16) * 1000;
+                const date = new Date(timestamp)
+                  .toISOString()
+                  .slice(0, 10);
 
-                  {/* 显示简化日期（避免长ID） */}
-                  <td style={{ padding: 14 }}>
-                    {user._id ? user._id.substring(0, 8) : ""}
-                  </td>
+                return (
+                  <tr key={user._id} style={{ borderBottom: "1px solid #eef2f7" }}>
+                    <td style={{ padding: 14 }}>
+                      {(currentPage - 1) * pageSize + index + 1}
+                    </td>
 
-                  <td style={{ padding: 14 }}>
-                    {user.username || (user.email ? user.email.split("@")[0] : "unknown")}
-                  </td>
+                    <td style={{ padding: 14 }}>{date}</td>
 
-                  <td style={{ padding: 14 }}>{user.email}</td>
+                    <td style={{ padding: 14 }}>
+                      {user.username || (user.email ? user.email.split("@")[0] : "unknown")}
+                    </td>
 
-                  <td style={{ padding: 14 }}>{user.role}</td>
+                    <td style={{ padding: 14 }}>{user.email}</td>
 
-                  <td style={{ padding: 14 }}>
-                    <button
-                      onClick={() => handleDelete(user._id)}
-                      style={{
-                        background: "#ef4444",
-                        color: "#fff",
-                        border: "none",
-                        padding: "6px 12px",
-                        borderRadius: 6,
-                        cursor: "pointer"
-                      }}
-                    >
-                      删除
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    <td style={{ padding: 14 }}>{user.role}</td>
+
+                    <td style={{ padding: 14 }}>
+                      <button
+                        onClick={() => handleDelete(user._id)}
+                        style={{
+                          background: "#ef4444",
+                          color: "#fff",
+                          border: "none",
+                          padding: "6px 12px",
+                          borderRadius: 6,
+                          cursor: "pointer"
+                        }}
+                      >
+                        删除
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 
