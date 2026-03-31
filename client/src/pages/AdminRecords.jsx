@@ -305,8 +305,9 @@ export default function AdminRecords() {
               await createUserIfNeeded(email, username);
 
 await createRecord({
-  user: email,
-                date: formatDateText(date),
+  user: email + "-token",
+  date: formatDateText(date),
+                 date: formatDateText(date),
                 steps: Number(steps) || 0,
                 sleep: Number(sleep) || 0,
                 water: Number(water) || 0,
