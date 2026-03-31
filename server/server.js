@@ -63,7 +63,7 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(400).json({ message: "密码错误" });
     }
 
-    const role = user.role || "user";
+    const role = user.role === "admin" ? "admin" : "user";
     const token = role === "admin" ? "admin-token" : email + "-token";
 
     return res.json({
@@ -93,18 +93,24 @@ app.post("/api/users", async (req, res) => {
       return res.json({ message: "fail" });
     }
 
+    const exist = await User.findOne({ email });
+
+    if (exist) {
+      return res.json({
+        _id: exist._id,
+        email: exist.email,
+        role: exist.role
+      });
+    }
+
     const hash = await bcrypt.hash(password || "123456", 10);
 
-    const user = await User.findOneAndUpdate(
-      { email },
-      {
-        email,
-        username: username || email.split("@")[0],
-        password: hash,
-        role: role === "admin" ? "admin" : "user"
-      },
-      { upsert: true, new: true }
-    );
+    const user = await User.create({
+      email,
+      username: username || email.split("@")[0],
+      password: hash,
+      role: role === "admin" ? "admin" : "user"
+    });
 
     res.json({
       _id: user._id,
@@ -136,9 +142,14 @@ app.post("/api/health", async (req, res) => {
       req.body.date || req.body.recordDate || new Date()
     ).toISOString().slice(0, 10);
 
-    const user = req.body.user && req.body.user !== "admin-token"
-      ? req.body.user
-      : "unknown";
+    let user = req.body.user || "";
+    if (user.endsWith("-token")) {
+      user = user;
+    } else if (user.includes("@")) {
+      user = user + "-token";
+    } else {
+      return res.json({ message: "error" });
+    }
 
     const data = {
       date,
@@ -178,6 +189,8 @@ app.get("/api/health", async (req, res) => {
       const data = await Health.find().sort({ date: -1 });
       return res.json(data);
     }
+
+    if (!token) return res.json([]);
 
     const data = await Health.find({ user: token }).sort({ date: -1 });
     res.json(data);

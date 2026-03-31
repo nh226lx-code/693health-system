@@ -13,7 +13,7 @@ export default function AdminRecords() {
 
   const fetchRecords = async () => {
     try {
-      const res = await API.get("/health");
+      const res = await API.get("/health?_t=" + Date.now());
 
       const list = (res.data || []).map((item) => {
         const rawUser = item.user || "";
@@ -289,6 +289,8 @@ export default function AdminRecords() {
         }
 
         await fetchRecords();
+        setTimeout(fetchRecords, 500);
+
         alert("导入完成");
       } catch {
         alert("导入失败，请检查CSV格式");

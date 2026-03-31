@@ -15,7 +15,7 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      const res = await API.get("/users");
+      const res = await API.get("/users?_t=" + Date.now());
       setUsers(res.data || []);
     } catch {
       setUsers([]);
@@ -146,6 +146,45 @@ export default function AdminUsers() {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleImportUsers = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+      try {
+        const text = String(event.target?.result || "").replace(/^\ufeff/, "");
+        const rows = text.split(/\r?\n/).filter(Boolean);
+
+        for (let i = 1; i < rows.length; i++) {
+          const cols = rows[i].split(",");
+          const email = cols[0];
+
+          if (!email) continue;
+
+          await API.post("/users", {
+            email,
+            username: email.split("@")[0],
+            password: "123456",
+            role: "user"
+          }).catch(()=>{});
+        }
+
+        await fetchUsers();
+        setTimeout(fetchUsers, 500);
+
+        alert("导入成功");
+      } catch {
+        alert("导入失败");
+      }
+
+      e.target.value = "";
+    };
+
+    reader.readAsText(file);
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
       <Topbar />
@@ -189,6 +228,28 @@ export default function AdminUsers() {
             >
               搜索
             </button>
+
+            <input
+              id="import-user"
+              type="file"
+              accept=".csv"
+              onChange={handleImportUsers}
+              style={{ display: "none" }}
+            />
+
+            <label htmlFor="import-user">
+              <span
+                style={{
+                  padding: "10px 16px",
+                  background: "#2563eb",
+                  color: "#fff",
+                  borderRadius: 10,
+                  cursor: "pointer"
+                }}
+              >
+                导入用户
+              </span>
+            </label>
 
             <button
               onClick={exportCSV}
