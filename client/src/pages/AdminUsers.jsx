@@ -205,7 +205,9 @@ export default function AdminUsers() {
         let successCount = 0;
 
         for (let i = 1; i < rows.length; i++) {
-          const cols = parseCSVLine(rows[i]);
+          const cols = rows[i]
+  .split(",")
+  .map((v) => v.replace(/^"|"$/g, "").trim());
           if (!cols.length) continue;
 
           if (isUserOnlyTemplate) {
@@ -245,20 +247,20 @@ export default function AdminUsers() {
 
             if (date) {
               await API.post("/health", {
-                user: email,
-                date,
-                steps: Number(steps) || 0,
-                sleep: Number(sleep) || 0,
-                water: Number(water) || 0,
-                weight: Number(weight) || 0
-              }).catch(() => {});
+  user: email + "-token",
+  date,
+  steps: Number(steps) || 0,
+  sleep: Number(sleep) || 0,
+  water: Number(water) || 0,
+  weight: Number(weight) || 0
+}).catch(() => {});
             }
 
             successCount++;
             continue;
           }
 
-          const email = String(cols[0] || "").trim();
+          const email = String(cols[0] || "").split(",")[0].trim();
           const username = String(cols[1] || "").trim();
 
           if (!email) continue;
@@ -468,6 +470,7 @@ export default function AdminUsers() {
                       </button>
                     </td>
                   </tr>
+
                 );
               })}
             </tbody>

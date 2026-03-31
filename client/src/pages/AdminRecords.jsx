@@ -309,7 +309,7 @@ export default function AdminRecords() {
             }
           }
 
-          if (!email || !date) continue;
+          if (!email) continue;
 
           await createUserIfNeeded(email, username);
 
