@@ -5,7 +5,10 @@ import Topbar from "../components/Topbar.jsx";
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [keyword, setKeyword] = useState("");
-  const [sortType, setSortType] = useState("newest");
+
+  const [sortField, setSortField] = useState("_id");
+  const [sortOrder, setSortOrder] = useState("desc");
+
   const [currentPage, setCurrentPage] = useState(1);
 
   const pageSize = 20;
@@ -29,6 +32,15 @@ export default function AdminUsers() {
     setUsers((prev) => prev.filter((u) => u._id !== id));
   };
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
       if (u.role === "admin") return false;
@@ -44,22 +56,23 @@ export default function AdminUsers() {
   const sortedUsers = useMemo(() => {
     const list = [...filteredUsers];
 
-    if (sortType === "newest") {
-      list.sort((a, b) => b._id.localeCompare(a._id));
-    } else if (sortType === "oldest") {
-      list.sort((a, b) => a._id.localeCompare(b._id));
-    } else if (sortType === "email") {
-      list.sort((a, b) => (a.email || "").localeCompare(b.email || ""));
-    }
+    list.sort((a, b) => {
+      let v1 = a[sortField] || "";
+      let v2 = b[sortField] || "";
+
+      if (v1 < v2) return sortOrder === "asc" ? -1 : 1;
+      if (v1 > v2) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
 
     return list;
-  }, [filteredUsers, sortType]);
+  }, [filteredUsers, sortField, sortOrder]);
 
   const totalPages = Math.max(1, Math.ceil(sortedUsers.length / pageSize));
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [keyword, sortType]);
+  }, [keyword, sortField, sortOrder]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -73,9 +86,10 @@ export default function AdminUsers() {
   }, [sortedUsers, currentPage]);
 
   const exportCSV = () => {
-    const headers = ["用户ID", "邮箱", "角色"];
+    const headers = ["序号", "用户ID", "邮箱", "角色"];
 
-    const rows = sortedUsers.map((user) => [
+    const rows = sortedUsers.map((user, i) => [
+      i + 1,
       user.username || (user.email ? user.email.split("@")[0] : "unknown"),
       user.email || "",
       user.role || ""
@@ -139,22 +153,6 @@ export default function AdminUsers() {
               }}
             />
 
-            <select
-              value={sortType}
-              onChange={(e) => setSortType(e.target.value)}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 10,
-                border: "1px solid #e2e8f0",
-                outline: "none",
-                background: "#fff"
-              }}
-            >
-              <option value="newest">按添加顺序：最新</option>
-              <option value="oldest">按添加顺序：最旧</option>
-              <option value="email">按邮箱排序</option>
-            </select>
-
             <button
               onClick={exportCSV}
               style={{
@@ -189,16 +187,26 @@ export default function AdminUsers() {
           >
             <thead>
               <tr style={{ background: "#f8fafc" }}>
-                <th style={{ padding: 14 }}>用户ID</th>
-                <th style={{ padding: 14 }}>邮箱</th>
-                <th style={{ padding: 14 }}>角色</th>
+                <th style={{ padding: 14 }}>序号</th>
+                <th style={{ padding: 14 }} onClick={() => handleSort("username")}>
+                  用户ID {sortField==="username"?(sortOrder==="asc"?"↑":"↓"):""}
+                </th>
+                <th style={{ padding: 14 }} onClick={() => handleSort("email")}>
+                  邮箱 {sortField==="email"?(sortOrder==="asc"?"↑":"↓"):""}
+                </th>
+                <th style={{ padding: 14 }} onClick={() => handleSort("role")}>
+                  角色 {sortField==="role"?(sortOrder==="asc"?"↑":"↓"):""}
+                </th>
                 <th style={{ padding: 14 }}>操作</th>
               </tr>
             </thead>
 
             <tbody>
-              {pagedUsers.map((user) => (
+              {pagedUsers.map((user, index) => (
                 <tr key={user._id} style={{ borderBottom: "1px solid #eef2f7" }}>
+                  <td style={{ padding: 14 }}>
+                    {(currentPage - 1) * pageSize + index + 1}
+                  </td>
                   <td style={{ padding: 14 }}>
                     {user.username || (user.email ? user.email.split("@")[0] : "unknown")}
                   </td>
@@ -249,19 +257,11 @@ export default function AdminUsers() {
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  style={{
-                    padding: "8px 14px",
-                    background: currentPage === 1 ? "#cbd5e1" : "#2563eb",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 10,
-                    cursor: currentPage === 1 ? "not-allowed" : "pointer"
-                  }}
                 >
                   上一页
                 </button>
 
-                <span style={{ color: "#334155", minWidth: 72, textAlign: "center" }}>
+                <span>
                   {currentPage} / {totalPages}
                 </span>
 
@@ -270,16 +270,6 @@ export default function AdminUsers() {
                     setCurrentPage((p) => Math.min(totalPages, p + 1))
                   }
                   disabled={currentPage === totalPages}
-                  style={{
-                    padding: "8px 14px",
-                    background:
-                      currentPage === totalPages ? "#cbd5e1" : "#2563eb",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 10,
-                    cursor:
-                      currentPage === totalPages ? "not-allowed" : "pointer"
-                  }}
                 >
                   下一页
                 </button>

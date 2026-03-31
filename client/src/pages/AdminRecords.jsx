@@ -5,7 +5,10 @@ import Topbar from "../components/Topbar.jsx";
 export default function AdminRecords() {
   const [records, setRecords] = useState([]);
   const [keyword, setKeyword] = useState("");
-  const [sortType, setSortType] = useState("newest");
+
+  const [sortField, setSortField] = useState("date");
+  const [sortOrder, setSortOrder] = useState("desc");
+
   const [currentPage, setCurrentPage] = useState(1);
 
   const pageSize = 20;
@@ -41,6 +44,15 @@ export default function AdminRecords() {
     setRecords((prev) => prev.filter((item) => item._id !== id));
   };
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
   const filteredRecords = useMemo(() => {
     return records.filter((item) => {
       const id = item.email ? item.email.split("@")[0] : "";
@@ -56,22 +68,28 @@ export default function AdminRecords() {
   const sortedRecords = useMemo(() => {
     const list = [...filteredRecords];
 
-    if (sortType === "newest") {
-      list.sort((a, b) => new Date(b.date) - new Date(a.date));
-    } else if (sortType === "oldest") {
-      list.sort((a, b) => new Date(a.date) - new Date(b.date));
-    } else if (sortType === "email") {
-      list.sort((a, b) => (a.email || "").localeCompare(b.email || ""));
-    }
+    list.sort((a, b) => {
+      let v1 = a[sortField];
+      let v2 = b[sortField];
+
+      if (sortField === "date") {
+        v1 = new Date(v1);
+        v2 = new Date(v2);
+      }
+
+      if (v1 < v2) return sortOrder === "asc" ? -1 : 1;
+      if (v1 > v2) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
 
     return list;
-  }, [filteredRecords, sortType]);
+  }, [filteredRecords, sortField, sortOrder]);
 
   const totalPages = Math.max(1, Math.ceil(sortedRecords.length / pageSize));
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [keyword, sortType]);
+  }, [keyword, sortField, sortOrder]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -85,9 +103,10 @@ export default function AdminRecords() {
   }, [sortedRecords, currentPage]);
 
   const exportCSV = () => {
-    const headers = ["日期", "用户ID", "邮箱", "步数", "睡眠", "饮水", "体重"];
+    const headers = ["序号","日期","用户ID","邮箱","步数","睡眠","饮水","体重"];
 
-    const rows = sortedRecords.map((item) => [
+    const rows = sortedRecords.map((item, i) => [
+      i + 1,
       item.date,
       item.email ? item.email.split("@")[0] : "unknown",
       item.email,
@@ -99,27 +118,70 @@ export default function AdminRecords() {
 
     const csvContent = [headers, ...rows]
       .map((row) =>
-        row
-          .map((cell) => {
-            const value = cell ?? "";
-            const text = String(value).replace(/"/g, '""');
-            return `"${text}"`;
-          })
-          .join(",")
+        row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")
       )
       .join("\n");
 
     const blob = new Blob(["\ufeff" + csvContent], {
       type: "text/csv;charset=utf-8;"
     });
-    const url = window.URL.createObjectURL(blob);
 
+    const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = "health_records.csv";
     a.click();
-
     window.URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+      try {
+        const text = event.target.result;
+        const rows = text.split("\n").slice(1);
+
+        for (let row of rows) {
+          if (!row.trim()) continue;
+
+          const [email, username, date, steps, sleep, water, weight] = row.split(",");
+
+          if (!email || !date) continue;
+
+          try {
+            await API.post("/users", {
+              email,
+              username,
+              role: "user"
+            });
+          } catch {}
+
+          try {
+            await API.post("/health", {
+              user: email,
+              date,
+              steps: Number(steps),
+              sleep: Number(sleep),
+              water: Number(water),
+              weight: Number(weight)
+            });
+          } catch {}
+        }
+
+        alert("导入完成");
+        fetchRecords();
+      } catch {
+        alert("导入失败，请检查CSV格式");
+      }
+
+      e.target.value = "";
+    };
+
+    reader.readAsText(file);
   };
 
   return (
@@ -156,21 +218,27 @@ export default function AdminRecords() {
               }}
             />
 
-            <select
-              value={sortType}
-              onChange={(e) => setSortType(e.target.value)}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 10,
-                border: "1px solid #e2e8f0",
-                outline: "none",
-                background: "#fff"
-              }}
-            >
-              <option value="newest">按日期：最新</option>
-              <option value="oldest">按日期：最旧</option>
-              <option value="email">按邮箱排序</option>
-            </select>
+            <input
+              id="import-file"
+              type="file"
+              accept=".csv"
+              onChange={handleImport}
+              style={{ display: "none" }}
+            />
+            <label htmlFor="import-file">
+              <span
+                style={{
+                  padding: "10px 18px",
+                  background: "#2563eb",
+                  color: "#fff",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  fontWeight: 500
+                }}
+              >
+                导入数据
+              </span>
+            </label>
 
             <button
               onClick={exportCSV}
@@ -197,53 +265,34 @@ export default function AdminRecords() {
             boxShadow: "0 10px 30px rgba(15,23,42,0.06)"
           }}
         >
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              tableLayout: "fixed",
-              textAlign: "center"
-            }}
-          >
+          <table style={{ width: "100%", textAlign: "center" }}>
             <thead>
               <tr style={{ background: "#f8fafc" }}>
-                <th style={{ padding: 14 }}>日期</th>
-                <th style={{ padding: 14 }}>用户ID</th>
-                <th style={{ padding: 14 }}>邮箱</th>
-                <th style={{ padding: 14 }}>步数</th>
-                <th style={{ padding: 14 }}>睡眠</th>
-                <th style={{ padding: 14 }}>饮水</th>
-                <th style={{ padding: 14 }}>体重</th>
-                <th style={{ padding: 14 }}>操作</th>
+                <th>序号</th>
+                <th onClick={() => handleSort("date")}>日期 {sortField==="date"?(sortOrder==="asc"?"↑":"↓"):""}</th>
+                <th>用户ID</th>
+                <th onClick={() => handleSort("email")}>邮箱 {sortField==="email"?(sortOrder==="asc"?"↑":"↓"):""}</th>
+                <th onClick={() => handleSort("steps")}>步数</th>
+                <th onClick={() => handleSort("sleep")}>睡眠</th>
+                <th onClick={() => handleSort("water")}>饮水</th>
+                <th onClick={() => handleSort("weight")}>体重</th>
+                <th>操作</th>
               </tr>
             </thead>
 
             <tbody>
-              {pagedRecords.map((item) => (
-                <tr key={item._id} style={{ borderBottom: "1px solid #eef2f7" }}>
-                  <td style={{ padding: 14 }}>{item.date}</td>
-                  <td style={{ padding: 14 }}>
-                    {item.email ? item.email.split("@")[0] : "unknown"}
-                  </td>
-                  <td style={{ padding: 14 }}>{item.email}</td>
-                  <td style={{ padding: 14 }}>{item.steps}</td>
-                  <td style={{ padding: 14 }}>{item.sleep}</td>
-                  <td style={{ padding: 14 }}>{item.water}</td>
-                  <td style={{ padding: 14 }}>{item.weight}</td>
-                  <td style={{ padding: 14 }}>
-                    <button
-                      onClick={() => handleDelete(item._id)}
-                      style={{
-                        padding: "8px 14px",
-                        background: "#ef4444",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: 10,
-                        cursor: "pointer"
-                      }}
-                    >
-                      删除
-                    </button>
+              {pagedRecords.map((item, index) => (
+                <tr key={item._id}>
+                  <td>{(currentPage - 1) * pageSize + index + 1}</td>
+                  <td>{item.date}</td>
+                  <td>{item.email?.split("@")[0]}</td>
+                  <td>{item.email}</td>
+                  <td>{item.steps}</td>
+                  <td>{item.sleep}</td>
+                  <td>{item.water}</td>
+                  <td>{item.weight}</td>
+                  <td>
+                    <button onClick={() => handleDelete(item._id)}>删除</button>
                   </td>
                 </tr>
               ))}
@@ -272,43 +321,9 @@ export default function AdminRecords() {
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  style={{
-                    padding: "8px 14px",
-                    background: currentPage === 1 ? "#cbd5e1" : "#2563eb",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 10,
-                    cursor: currentPage === 1 ? "not-allowed" : "pointer"
-                  }}
-                >
-                  上一页
-                </button>
-
-                <span style={{ color: "#334155", minWidth: 72, textAlign: "center" }}>
-                  {currentPage} / {totalPages}
-                </span>
-
-                <button
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  style={{
-                    padding: "8px 14px",
-                    background:
-                      currentPage === totalPages ? "#cbd5e1" : "#2563eb",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 10,
-                    cursor:
-                      currentPage === totalPages ? "not-allowed" : "pointer"
-                  }}
-                >
-                  下一页
-                </button>
+                <button onClick={() => setCurrentPage(p => Math.max(1,p-1))} disabled={currentPage===1}>上一页</button>
+                <span>{currentPage} / {totalPages}</span>
+                <button onClick={() => setCurrentPage(p => Math.min(totalPages,p+1))} disabled={currentPage===totalPages}>下一页</button>
               </div>
             </div>
           )}
