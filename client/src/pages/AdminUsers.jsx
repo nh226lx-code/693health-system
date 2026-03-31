@@ -210,25 +210,16 @@ export default function AdminUsers() {
               <tr style={{ background: "#f8fafc" }}>
                 <th style={{ padding: 14 }}>序号</th>
 
-                {/* 新增：日期排序 */}
-                <th
-                  style={{ padding: 14, cursor: "pointer" }}
-                  onClick={() => handleSort("_id")}
-                >
+                {/* 日期排序 */}
+                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("_id")}>
                   日期 {getSortIcon("_id")}
                 </th>
 
-                <th
-                  style={{ padding: 14, cursor: "pointer" }}
-                  onClick={() => handleSort("username")}
-                >
+                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("username")}>
                   用户ID {getSortIcon("username")}
                 </th>
 
-                <th
-                  style={{ padding: 14, cursor: "pointer" }}
-                  onClick={() => handleSort("email")}
-                >
+                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("email")}>
                   邮箱 {getSortIcon("email")}
                 </th>
 
@@ -248,8 +239,10 @@ export default function AdminUsers() {
                     {(currentPage - 1) * pageSize + index + 1}
                   </td>
 
-                  {/* 显示日期（用 _id） */}
-                  <td style={{ padding: 14 }}>{user._id}</td>
+                  {/* 显示简化日期（避免长ID） */}
+                  <td style={{ padding: 14 }}>
+                    {user._id ? user._id.substring(0, 8) : ""}
+                  </td>
 
                   <td style={{ padding: 14 }}>
                     {user.username || (user.email ? user.email.split("@")[0] : "unknown")}
