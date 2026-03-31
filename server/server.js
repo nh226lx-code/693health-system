@@ -134,17 +134,18 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
+/* ===== 修复这里：导入数据写入问题 ===== */
 app.post("/api/health", async (req, res) => {
   try {
     const date = new Date(
       req.body.date || req.body.recordDate || new Date()
     ).toISOString().slice(0, 10);
 
-    const token = req.headers.authorization?.split(" ")[1] || "unknown";
+    const user = req.body.user || "unknown";
 
     const data = {
       date,
-      user: token,
+      user,
       steps: Number(req.body.steps) || 0,
       sleep: Number(req.body.sleep) || 0,
       water: Number(req.body.water) || 0,
@@ -152,7 +153,7 @@ app.post("/api/health", async (req, res) => {
     };
 
     await Health.findOneAndUpdate(
-      { date, user: token },
+      { date, user },
       data,
       { upsert: true, new: true }
     );
@@ -163,16 +164,17 @@ app.post("/api/health", async (req, res) => {
   }
 });
 
+/* ===== 修复这里：管理员能看到导入数据 ===== */
 app.get("/api/health", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1] || "";
 
     if (token === "admin-token") {
-      const data = await Health.find().sort({ date: 1 });
+      const data = await Health.find().sort({ date: -1 });
       return res.json(data);
     }
 
-    const data = await Health.find({ user: token }).sort({ date: 1 });
+    const data = await Health.find({ user: token }).sort({ date: -1 });
     res.json(data);
   } catch {
     res.json([]);
