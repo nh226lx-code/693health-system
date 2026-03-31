@@ -22,11 +22,11 @@ export default function AdminUsers() {
     }
   };
 
-useEffect(() => {
-  fetchUsers();
-  const timer = setInterval(fetchUsers, 2000);
-  return () => clearInterval(timer);
-}, []);
+  useEffect(() => {
+    fetchUsers();
+    const timer = setInterval(fetchUsers, 2000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleDelete = (id) => {
     const ok = window.confirm("确定删除该用户？");
@@ -39,7 +39,6 @@ useEffect(() => {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-
       if (field === "_id") {
         setSortOrder("desc");
       } else {
@@ -48,7 +47,6 @@ useEffect(() => {
     }
   };
 
-  // ✅ UI统一（和报告页一致）
   const getSortIcon = (field) => {
     if (sortField === field) {
       return sortOrder === "asc" ? "▲" : "▼";
@@ -57,12 +55,13 @@ useEffect(() => {
   };
 
   const filteredUsers = useMemo(() => {
+    const value = (keyword || "").toLowerCase();
+
     return users.filter((u) => {
       if (String(u.role || "").toLowerCase() === "admin") return false;
 
       const email = (u.email || "").toLowerCase();
       const username = (u.username || "").toLowerCase();
-      const value = keyword.toLowerCase();
 
       return email.includes(value) || username.includes(value);
     });
@@ -72,15 +71,14 @@ useEffect(() => {
     const list = [...filteredUsers];
 
     list.sort((a, b) => {
-      // ✅ 日期排序（用 _id 时间戳）
       if (sortField === "_id") {
-        const t1 = parseInt(a._id.substring(0, 8), 16);
-        const t2 = parseInt(b._id.substring(0, 8), 16);
+        const t1 = parseInt((a._id || "").substring(0, 8), 16) || 0;
+        const t2 = parseInt((b._id || "").substring(0, 8), 16) || 0;
         return sortOrder === "asc" ? t1 - t2 : t2 - t1;
       }
 
-      let v1 = a[sortField] || "";
-      let v2 = b[sortField] || "";
+      let v1 = String(a[sortField] || "").toLowerCase();
+      let v2 = String(b[sortField] || "").toLowerCase();
 
       if (v1 < v2) return sortOrder === "asc" ? -1 : 1;
       if (v1 > v2) return sortOrder === "asc" ? 1 : -1;
@@ -240,14 +238,11 @@ useEffect(() => {
 
             <tbody>
               {pagedUsers.map((user, index) => {
-                // ✅ 从 _id 解析真实日期
-                const timestamp = parseInt(user._id.substring(0, 8), 16) * 1000;
-                const date = new Date(timestamp)
-                  .toISOString()
-                  .slice(0, 10);
+                const timestamp = parseInt((user._id || "").substring(0, 8), 16) * 1000;
+                const date = timestamp ? new Date(timestamp).toISOString().slice(0, 10) : "-";
 
                 return (
-                  <tr key={user._id} style={{ borderBottom: "1px solid #eef2f7" }}>
+                  <tr key={user._id}>
                     <td style={{ padding: 14 }}>
                       {(currentPage - 1) * pageSize + index + 1}
                     </td>
@@ -286,37 +281,6 @@ useEffect(() => {
           {sortedUsers.length === 0 && (
             <div style={{ textAlign: "center", padding: 30 }}>
               无匹配用户
-            </div>
-          )}
-
-          {sortedUsers.length > 0 && (
-            <div
-              style={{
-                marginTop: 20,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 12
-              }}
-            >
-              <div style={{ color: "#64748b", fontSize: 14 }}>
-                共 {sortedUsers.length} 条，每页 20 条
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>
-                  上一页
-                </button>
-
-                <span>
-                  {currentPage} / {totalPages}
-                </span>
-
-                <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>
-                  下一页
-                </button>
-              </div>
             </div>
           )}
         </div>

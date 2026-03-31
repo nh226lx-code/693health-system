@@ -5,10 +5,8 @@ import Topbar from "../components/Topbar.jsx";
 export default function AdminRecords() {
   const [records, setRecords] = useState([]);
   const [keyword, setKeyword] = useState("");
-
   const [sortField, setSortField] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
-
   const [currentPage, setCurrentPage] = useState(1);
 
   const pageSize = 20;
@@ -277,12 +275,14 @@ export default function AdminRecords() {
 
           try {
             await API.post("/users", {
-  email,
-  username: username || email.split("@")[0],
-  password: "123456",
-  role: "user"
-});
-          } catch {}
+              email,
+              username: username || email.split("@")[0],
+              password: "123456",
+              role: "user"
+            });
+          } catch {
+            continue;
+          }
 
           try {
             await API.post("/health", {
@@ -373,17 +373,17 @@ export default function AdminRecords() {
             />
 
             <label htmlFor="import-file">
-  <span
-    style={{
-      ...actionButtonStyle,
-      display: "inline-block",
-      background: "#2563eb",
-      color: "#fff"
-    }}
-  >
-    导入数据
-  </span>
-</label>
+              <span
+                style={{
+                  ...actionButtonStyle,
+                  display: "inline-block",
+                  background: "#2563eb",
+                  color: "#fff"
+                }}
+              >
+                导入数据
+              </span>
+            </label>
 
             <button
               onClick={exportCSV}
@@ -416,46 +416,25 @@ export default function AdminRecords() {
             <thead>
               <tr style={{ background: "#f8fafc" }}>
                 <th style={{ padding: 14 }}>序号</th>
-                <th
-                  style={{ padding: 14, cursor: "pointer" }}
-                  onClick={() => handleSort("date")}
-                >
+                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("date")}>
                   日期 {getSortIcon("date")}
                 </th>
-                <th
-                  style={{ padding: 14, cursor: "pointer" }}
-                  onClick={() => handleSort("email")}
-                >
+                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("email")}>
                   用户 {getSortIcon("email")}
                 </th>
-                <th
-                  style={{ padding: 14, cursor: "pointer" }}
-                  onClick={() => handleSort("email")}
-                >
+                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("email")}>
                   邮箱 {getSortIcon("email")}
                 </th>
-                <th
-                  style={{ padding: 14, cursor: "pointer" }}
-                  onClick={() => handleSort("steps")}
-                >
+                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("steps")}>
                   步数 {getSortIcon("steps")}
                 </th>
-                <th
-                  style={{ padding: 14, cursor: "pointer" }}
-                  onClick={() => handleSort("sleep")}
-                >
+                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("sleep")}>
                   睡眠 {getSortIcon("sleep")}
                 </th>
-                <th
-                  style={{ padding: 14, cursor: "pointer" }}
-                  onClick={() => handleSort("water")}
-                >
+                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("water")}>
                   饮水 {getSortIcon("water")}
                 </th>
-                <th
-                  style={{ padding: 14, cursor: "pointer" }}
-                  onClick={() => handleSort("weight")}
-                >
+                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("weight")}>
                   体重 {getSortIcon("weight")}
                 </th>
                 <th style={{ padding: 14 }}>操作</th>

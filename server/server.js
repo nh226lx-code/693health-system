@@ -102,14 +102,7 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
-app.post("/api/users", async (req, res) => {
-  try {
-    const { email, password, role } = req.body;
-
-    if (!email || !password) {
-      return res.json({ message: "fail" });
-    }
-
+/* ===== 修复核心：用户一定存在（导入/创建统一逻辑）===== */
 app.post("/api/users", async (req, res) => {
   try {
     const { email, password, role, username } = req.body;
@@ -120,7 +113,7 @@ app.post("/api/users", async (req, res) => {
 
     const hash = await bcrypt.hash(password || "123456", 10);
 
-    const newUser = await User.findOneAndUpdate(
+    const user = await User.findOneAndUpdate(
       { email },
       {
         email,
@@ -132,35 +125,16 @@ app.post("/api/users", async (req, res) => {
     );
 
     res.json({
-      _id: newUser._id,
-      email: newUser.email,
-      role: newUser.role
+      _id: user._id,
+      email: user.email,
+      role: user.role
     });
   } catch {
     res.json({ message: "error" });
   }
 });
 
-    const hash = await bcrypt.hash(password, 10);
-    const savedRole = email === "test@admin.com" ? "admin" : (role || "user");
-
-    const newUser = await User.create({
-      email,
-      password: hash,
-      role: savedRole
-    });
-
-    res.json({
-      _id: newUser._id,
-      email: newUser.email,
-      role: newUser.role
-    });
-  } catch {
-    res.json({ message: "error" });
-  }
-});
-
-/* ===== 修复这里：导入数据写入问题 ===== */
+/* ===== 健康数据 ===== */
 app.post("/api/health", async (req, res) => {
   try {
     const date = new Date(
@@ -190,7 +164,6 @@ app.post("/api/health", async (req, res) => {
   }
 });
 
-/* ===== 修复这里：管理员能看到导入数据 ===== */
 app.get("/api/health", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1] || "";
