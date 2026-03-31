@@ -53,6 +53,13 @@ export default function AdminRecords() {
     }
   };
 
+  const getSortIcon = (field) => {
+    if (sortField === field) {
+      return sortOrder === "asc" ? "↑" : "↓";
+    }
+    return "↕";
+  };
+
   const filteredRecords = useMemo(() => {
     return records.filter((item) => {
       const id = item.email ? item.email.split("@")[0] : "";
@@ -213,10 +220,22 @@ export default function AdminRecords() {
                 padding: "10px 14px",
                 width: 240,
                 borderRadius: 10,
-                border: "1px solid #e2e8f0",
-                outline: "none"
+                border: "1px solid #e2e8f0"
               }}
             />
+
+            <button
+              onClick={() => setKeyword(keyword)}
+              style={{
+                padding: "10px 16px",
+                background: "#2563eb",
+                color: "#fff",
+                border: "none",
+                borderRadius: 10
+              }}
+            >
+              搜索
+            </button>
 
             <input
               id="import-file"
@@ -225,6 +244,7 @@ export default function AdminRecords() {
               onChange={handleImport}
               style={{ display: "none" }}
             />
+
             <label htmlFor="import-file">
               <span
                 style={{
@@ -232,8 +252,7 @@ export default function AdminRecords() {
                   background: "#2563eb",
                   color: "#fff",
                   borderRadius: 10,
-                  cursor: "pointer",
-                  fontWeight: 500
+                  cursor: "pointer"
                 }}
               >
                 导入数据
@@ -247,9 +266,7 @@ export default function AdminRecords() {
                 background: "#16a34a",
                 color: "#fff",
                 border: "none",
-                borderRadius: 10,
-                cursor: "pointer",
-                fontWeight: 500
+                borderRadius: 10
               }}
             >
               导出数据
@@ -261,21 +278,20 @@ export default function AdminRecords() {
           style={{
             background: "#fff",
             borderRadius: 24,
-            padding: 20,
-            boxShadow: "0 10px 30px rgba(15,23,42,0.06)"
+            padding: 20
           }}
         >
           <table style={{ width: "100%", textAlign: "center" }}>
             <thead>
-              <tr style={{ background: "#f8fafc" }}>
+              <tr>
                 <th>序号</th>
-                <th onClick={() => handleSort("date")}>日期 {sortField==="date"?(sortOrder==="asc"?"↑":"↓"):""}</th>
+                <th onClick={() => handleSort("date")}>日期 {getSortIcon("date")}</th>
                 <th>用户ID</th>
-                <th onClick={() => handleSort("email")}>邮箱 {sortField==="email"?(sortOrder==="asc"?"↑":"↓"):""}</th>
-                <th onClick={() => handleSort("steps")}>步数</th>
-                <th onClick={() => handleSort("sleep")}>睡眠</th>
-                <th onClick={() => handleSort("water")}>饮水</th>
-                <th onClick={() => handleSort("weight")}>体重</th>
+                <th onClick={() => handleSort("email")}>邮箱 {getSortIcon("email")}</th>
+                <th onClick={() => handleSort("steps")}>步数 {getSortIcon("steps")}</th>
+                <th onClick={() => handleSort("sleep")}>睡眠 {getSortIcon("sleep")}</th>
+                <th onClick={() => handleSort("water")}>饮水 {getSortIcon("water")}</th>
+                <th onClick={() => handleSort("weight")}>体重 {getSortIcon("weight")}</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -300,31 +316,16 @@ export default function AdminRecords() {
           </table>
 
           {sortedRecords.length === 0 && (
-            <div style={{ textAlign: "center", padding: 30, color: "#64748b" }}>
+            <div style={{ textAlign: "center", padding: 30 }}>
               暂无数据
             </div>
           )}
 
           {sortedRecords.length > 0 && (
-            <div
-              style={{
-                marginTop: 20,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 12
-              }}
-            >
-              <div style={{ color: "#64748b", fontSize: 14 }}>
-                共 {sortedRecords.length} 条，每页 20 条
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <button onClick={() => setCurrentPage(p => Math.max(1,p-1))} disabled={currentPage===1}>上一页</button>
-                <span>{currentPage} / {totalPages}</span>
-                <button onClick={() => setCurrentPage(p => Math.min(totalPages,p+1))} disabled={currentPage===totalPages}>下一页</button>
-              </div>
+            <div style={{ marginTop: 20, textAlign: "center" }}>
+              <button onClick={() => setCurrentPage(p => Math.max(1,p-1))}>上一页</button>
+              <span> {currentPage} / {totalPages} </span>
+              <button onClick={() => setCurrentPage(p => Math.min(totalPages,p+1))}>下一页</button>
             </div>
           )}
         </div>

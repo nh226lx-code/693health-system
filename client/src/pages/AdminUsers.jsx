@@ -41,6 +41,13 @@ export default function AdminUsers() {
     }
   };
 
+  const getSortIcon = (field) => {
+    if (sortField === field) {
+      return sortOrder === "asc" ? "↑" : "↓";
+    }
+    return "↕";
+  };
+
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
       if (u.role === "admin") return false;
@@ -148,10 +155,21 @@ export default function AdminUsers() {
                 padding: 10,
                 width: 260,
                 borderRadius: 10,
-                border: "1px solid #e2e8f0",
-                outline: "none"
+                border: "1px solid #e2e8f0"
               }}
             />
+
+            <button
+              style={{
+                padding: "10px 16px",
+                background: "#2563eb",
+                color: "#fff",
+                border: "none",
+                borderRadius: 10
+              }}
+            >
+              搜索
+            </button>
 
             <button
               onClick={exportCSV}
@@ -160,9 +178,7 @@ export default function AdminUsers() {
                 background: "#16a34a",
                 color: "#fff",
                 border: "none",
-                borderRadius: 10,
-                cursor: "pointer",
-                fontWeight: 500
+                borderRadius: 10
               }}
             >
               导出用户
@@ -188,14 +204,14 @@ export default function AdminUsers() {
             <thead>
               <tr style={{ background: "#f8fafc" }}>
                 <th style={{ padding: 14 }}>序号</th>
-                <th style={{ padding: 14 }} onClick={() => handleSort("username")}>
-                  用户ID {sortField==="username"?(sortOrder==="asc"?"↑":"↓"):""}
+                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("username")}>
+                  用户ID {getSortIcon("username")}
                 </th>
-                <th style={{ padding: 14 }} onClick={() => handleSort("email")}>
-                  邮箱 {sortField==="email"?(sortOrder==="asc"?"↑":"↓"):""}
+                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("email")}>
+                  邮箱 {getSortIcon("email")}
                 </th>
-                <th style={{ padding: 14 }} onClick={() => handleSort("role")}>
-                  角色 {sortField==="role"?(sortOrder==="asc"?"↑":"↓"):""}
+                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("role")}>
+                  角色 {getSortIcon("role")}
                 </th>
                 <th style={{ padding: 14 }}>操作</th>
               </tr>
@@ -254,10 +270,7 @@ export default function AdminUsers() {
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
+                <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>
                   上一页
                 </button>
 
@@ -265,12 +278,7 @@ export default function AdminUsers() {
                   {currentPage} / {totalPages}
                 </span>
 
-                <button
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                >
+                <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>
                   下一页
                 </button>
               </div>
