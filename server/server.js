@@ -43,44 +43,27 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(400).json({ message: "请输入邮箱和密码" });
     }
 
-    const users = await User.find({ email });
+    const user = await User.findOne({ email });
 
-    if (!users || users.length === 0) {
+    if (!user) {
       return res.status(400).json({ message: "用户不存在" });
     }
 
-    let matchedUser = null;
+    let isMatch = false;
 
-    for (const user of users) {
-      let isMatch = false;
-
-      if (user.password) {
-        try {
-          if (user.password.startsWith("$2")) {
-            isMatch = await bcrypt.compare(password, user.password);
-          } else {
-            isMatch = password === user.password;
-          }
-        } catch {
-          isMatch = false;
-        }
-
-        if (!isMatch && password === user.password) {
-          isMatch = true;
-        }
-      }
-
-      if (isMatch) {
-        matchedUser = user;
-        break;
+    if (user.password) {
+      if (user.password.startsWith("$2")) {
+        isMatch = await bcrypt.compare(password, user.password);
+      } else {
+        isMatch = password === user.password;
       }
     }
 
-    if (!matchedUser) {
+    if (!isMatch) {
       return res.status(400).json({ message: "密码错误" });
     }
 
-    const role = email === "test@admin.com" ? "admin" : (matchedUser.role || "user");
+    const role = user.role || "user";
     const token = role === "admin" ? "admin-token" : email + "-token";
 
     return res.json({
@@ -118,7 +101,7 @@ app.post("/api/users", async (req, res) => {
         email,
         username: username || email.split("@")[0],
         password: hash,
-        role: role || "user"
+        role: role === "admin" ? "admin" : "user"
       },
       { upsert: true, new: true }
     );
@@ -133,7 +116,6 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
-/* 新增：删除用户 */
 app.delete("/api/users/:id", async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
@@ -148,14 +130,15 @@ app.delete("/api/users/:id", async (req, res) => {
   }
 });
 
-/* 健康数据 */
 app.post("/api/health", async (req, res) => {
   try {
     const date = new Date(
       req.body.date || req.body.recordDate || new Date()
     ).toISOString().slice(0, 10);
 
-    const user = req.body.user || "unknown";
+    const user = req.body.user && req.body.user !== "admin-token"
+      ? req.body.user
+      : "unknown";
 
     const data = {
       date,
@@ -178,7 +161,6 @@ app.post("/api/health", async (req, res) => {
   }
 });
 
-/* 新增：删除健康记录 */
 app.delete("/api/health/:id", async (req, res) => {
   try {
     await Health.findByIdAndDelete(req.params.id);
