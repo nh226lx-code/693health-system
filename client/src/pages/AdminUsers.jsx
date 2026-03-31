@@ -15,16 +15,22 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      const res = await API.get("/users?_t=" + Date.now());
-      setUsers(res.data || []);
+    const res = await API.get("/users?_t=" + Date.now());
+
+if (Array.isArray(res.data)) {
+  setUsers(res.data);
+} else {
+  setUsers([]);
+}
     } catch {
       setUsers([]);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+  setUsers([]);
+  fetchUsers();
+}, []);
 
   const handleDelete = async (id) => {
     const ok = window.confirm("确定删除该用户？");
