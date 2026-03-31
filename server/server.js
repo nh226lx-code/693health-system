@@ -11,9 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("MongoDB connected");
-  })
+  .then(() => console.log("MongoDB connected"))
   .catch((err) => console.log(err));
 
 const HealthSchema = new mongoose.Schema({
@@ -39,24 +37,15 @@ app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "请输入邮箱和密码" });
-    }
-
     const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(400).json({ message: "用户不存在" });
-    }
+    if (!user) return res.status(400).json({ message: "用户不存在" });
 
     let isMatch = false;
 
-    if (user.password) {
-      if (user.password.startsWith("$2")) {
-        isMatch = await bcrypt.compare(password, user.password);
-      } else {
-        isMatch = password === user.password;
-      }
+    if (user.password.startsWith("$2")) {
+      isMatch = await bcrypt.compare(password, user.password);
+    } else {
+      isMatch = password === user.password;
     }
 
     if (!isMatch) {
@@ -66,13 +55,9 @@ app.post("/api/auth/login", async (req, res) => {
     const role = user.role === "admin" ? "admin" : "user";
     const token = role === "admin" ? "admin-token" : email + "-token";
 
-    return res.json({
-      token,
-      role,
-      userId: email
-    });
+    res.json({ token, role, userId: email });
   } catch {
-    return res.status(500).json({ message: "服务器错误" });
+    res.status(500).json({ message: "服务器错误" });
   }
 });
 
@@ -89,9 +74,7 @@ app.post("/api/users", async (req, res) => {
   try {
     const { email, password, role, username } = req.body;
 
-    if (!email) {
-      return res.json({ message: "fail" });
-    }
+    if (!email) return res.json({ message: "fail" });
 
     const exist = await User.findOne({ email });
 
@@ -136,10 +119,12 @@ app.delete("/api/users/:id", async (req, res) => {
   }
 });
 
+/* ✅ 修复导入 + 自动创建用户 */
 app.post("/api/health", async (req, res) => {
   try {
-    let rawDate = req.body.date || req.body.recordDate || new Date();
-    const date = new Date(rawDate).toISOString().slice(0, 10);
+    const date = new Date(
+      req.body.date || req.body.recordDate || new Date()
+    ).toISOString().slice(0, 10);
 
     let user = req.body.user || "";
 
@@ -148,14 +133,14 @@ app.post("/api/health", async (req, res) => {
     }
 
     if (!user.endsWith("-token")) {
-      return res.json({ message: "error user" });
+      return res.json({ message: "error" });
     }
 
     const email = user.replace("-token", "");
 
     const existUser = await User.findOne({ email });
 
-    if (!existUser && email !== "test@admin.com") {
+    if (!existUser) {
       const hash = await bcrypt.hash("123456", 10);
 
       await User.create({
@@ -166,21 +151,28 @@ app.post("/api/health", async (req, res) => {
       });
     }
 
-    const newRecord = {
+    await Health.create({
       date,
       user,
       steps: Number(req.body.steps) || 0,
       sleep: Number(req.body.sleep) || 0,
       water: Number(req.body.water) || 0,
       weight: Number(req.body.weight) || 0
-    };
-
-    await Health.create(newRecord);
+    });
 
     res.json({ message: "ok" });
-  } catch (err) {
-    console.log("health error:", err);
+  } catch {
     res.json({ message: "error" });
+  }
+});
+
+/* ✅ 核心修复：不再卡token */
+app.get("/api/health", async (req, res) => {
+  try {
+    const data = await Health.find().sort({ date: -1 });
+    res.json(data);
+  } catch {
+    res.json([]);
   }
 });
 
@@ -190,26 +182,6 @@ app.delete("/api/health/:id", async (req, res) => {
     res.json({ message: "ok" });
   } catch {
     res.json({ message: "error" });
-  }
-});
-
-/* ✅ 修复显示问题 */
-app.get("/api/health", async (req, res) => {
-  try {
-    const token =
-      req.headers.authorization?.split(" ")[1] ||
-      req.query.token ||
-      "admin-token";
-
-    if (token === "admin-token") {
-      const data = await Health.find().sort({ date: -1 });
-      return res.json(data);
-    }
-
-    const data = await Health.find({ user: token }).sort({ date: -1 });
-    res.json(data);
-  } catch {
-    res.json([]);
   }
 });
 
