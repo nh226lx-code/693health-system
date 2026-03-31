@@ -37,12 +37,18 @@ app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({ message: "请输入邮箱和密码" });
+    }
+
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "用户不存在" });
+    if (!user) {
+      return res.status(400).json({ message: "用户不存在" });
+    }
 
     let isMatch = false;
 
-    if (user.password.startsWith("$2")) {
+    if (user.password && user.password.startsWith("$2")) {
       isMatch = await bcrypt.compare(password, user.password);
     } else {
       isMatch = password === user.password;
@@ -55,9 +61,13 @@ app.post("/api/auth/login", async (req, res) => {
     const role = user.role === "admin" ? "admin" : "user";
     const token = role === "admin" ? "admin-token" : email + "-token";
 
-    res.json({ token, role, userId: email });
+    return res.json({
+      token,
+      role,
+      userId: email
+    });
   } catch {
-    res.status(500).json({ message: "服务器错误" });
+    return res.status(500).json({ message: "服务器错误" });
   }
 });
 
@@ -74,7 +84,9 @@ app.post("/api/users", async (req, res) => {
   try {
     const { email, password, role, username } = req.body;
 
-    if (!email) return res.json({ message: "fail" });
+    if (!email) {
+      return res.json({ message: "fail" });
+    }
 
     const exist = await User.findOne({ email });
 
@@ -119,7 +131,7 @@ app.delete("/api/users/:id", async (req, res) => {
   }
 });
 
-/* ✅ 修复导入 + 自动创建用户 */
+/* 修复：导入写入 + 自动建用户 */
 app.post("/api/health", async (req, res) => {
   try {
     const date = new Date(
@@ -166,7 +178,7 @@ app.post("/api/health", async (req, res) => {
   }
 });
 
-/* ✅ 核心修复：不再卡token */
+/* 修复：后台永远能看到数据 */
 app.get("/api/health", async (req, res) => {
   try {
     const data = await Health.find().sort({ date: -1 });
