@@ -55,9 +55,9 @@ export default function AdminRecords() {
 
   const getSortIcon = (field) => {
     if (sortField === field) {
-      return sortOrder === "asc" ? "↑" : "↓";
+      return sortOrder === "asc" ? "▲" : "▼";
     }
-    return "↕";
+    return "⇅";
   };
 
   const filteredRecords = useMemo(() => {
@@ -110,7 +110,7 @@ export default function AdminRecords() {
   }, [sortedRecords, currentPage]);
 
   const exportCSV = () => {
-    const headers = ["序号","日期","用户ID","邮箱","步数","睡眠","饮水","体重"];
+    const headers = ["序号", "日期", "用户ID", "邮箱", "步数", "睡眠", "饮水", "体重"];
 
     const rows = sortedRecords.map((item, i) => [
       i + 1,
@@ -220,18 +220,20 @@ export default function AdminRecords() {
                 padding: "10px 14px",
                 width: 240,
                 borderRadius: 10,
-                border: "1px solid #e2e8f0"
+                border: "1px solid #e2e8f0",
+                outline: "none"
               }}
             />
 
             <button
-              onClick={() => setKeyword(keyword)}
               style={{
                 padding: "10px 16px",
                 background: "#2563eb",
                 color: "#fff",
                 border: "none",
-                borderRadius: 10
+                borderRadius: 10,
+                cursor: "pointer",
+                fontWeight: 500
               }}
             >
               搜索
@@ -248,11 +250,13 @@ export default function AdminRecords() {
             <label htmlFor="import-file">
               <span
                 style={{
+                  display: "inline-block",
                   padding: "10px 18px",
                   background: "#2563eb",
                   color: "#fff",
                   borderRadius: 10,
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  fontWeight: 500
                 }}
               >
                 导入数据
@@ -266,7 +270,9 @@ export default function AdminRecords() {
                 background: "#16a34a",
                 color: "#fff",
                 border: "none",
-                borderRadius: 10
+                borderRadius: 10,
+                cursor: "pointer",
+                fontWeight: 500
               }}
             >
               导出数据
@@ -278,37 +284,93 @@ export default function AdminRecords() {
           style={{
             background: "#fff",
             borderRadius: 24,
-            padding: 20
+            padding: 20,
+            boxShadow: "0 10px 30px rgba(15,23,42,0.06)"
           }}
         >
-          <table style={{ width: "100%", textAlign: "center" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              textAlign: "center"
+            }}
+          >
             <thead>
-              <tr>
-                <th>序号</th>
-                <th onClick={() => handleSort("date")}>日期 {getSortIcon("date")}</th>
-                <th>用户ID</th>
-                <th onClick={() => handleSort("email")}>邮箱 {getSortIcon("email")}</th>
-                <th onClick={() => handleSort("steps")}>步数 {getSortIcon("steps")}</th>
-                <th onClick={() => handleSort("sleep")}>睡眠 {getSortIcon("sleep")}</th>
-                <th onClick={() => handleSort("water")}>饮水 {getSortIcon("water")}</th>
-                <th onClick={() => handleSort("weight")}>体重 {getSortIcon("weight")}</th>
-                <th>操作</th>
+              <tr style={{ background: "#f8fafc" }}>
+                <th style={{ padding: 14 }}>序号</th>
+                <th
+                  style={{ padding: 14, cursor: "pointer" }}
+                  onClick={() => handleSort("date")}
+                >
+                  日期 {getSortIcon("date")}
+                </th>
+                <th
+                  style={{ padding: 14, cursor: "pointer" }}
+                  onClick={() => handleSort("email")}
+                >
+                  用户 {getSortIcon("email")}
+                </th>
+                <th
+                  style={{ padding: 14, cursor: "pointer" }}
+                  onClick={() => handleSort("email")}
+                >
+                  邮箱 {getSortIcon("email")}
+                </th>
+                <th
+                  style={{ padding: 14, cursor: "pointer" }}
+                  onClick={() => handleSort("steps")}
+                >
+                  步数 {getSortIcon("steps")}
+                </th>
+                <th
+                  style={{ padding: 14, cursor: "pointer" }}
+                  onClick={() => handleSort("sleep")}
+                >
+                  睡眠 {getSortIcon("sleep")}
+                </th>
+                <th
+                  style={{ padding: 14, cursor: "pointer" }}
+                  onClick={() => handleSort("water")}
+                >
+                  饮水 {getSortIcon("water")}
+                </th>
+                <th
+                  style={{ padding: 14, cursor: "pointer" }}
+                  onClick={() => handleSort("weight")}
+                >
+                  体重 {getSortIcon("weight")}
+                </th>
+                <th style={{ padding: 14 }}>操作</th>
               </tr>
             </thead>
 
             <tbody>
               {pagedRecords.map((item, index) => (
                 <tr key={item._id}>
-                  <td>{(currentPage - 1) * pageSize + index + 1}</td>
-                  <td>{item.date}</td>
-                  <td>{item.email?.split("@")[0]}</td>
-                  <td>{item.email}</td>
-                  <td>{item.steps}</td>
-                  <td>{item.sleep}</td>
-                  <td>{item.water}</td>
-                  <td>{item.weight}</td>
-                  <td>
-                    <button onClick={() => handleDelete(item._id)}>删除</button>
+                  <td style={{ padding: 14 }}>
+                    {(currentPage - 1) * pageSize + index + 1}
+                  </td>
+                  <td style={{ padding: 14 }}>{item.date}</td>
+                  <td style={{ padding: 14 }}>{item.email?.split("@")[0]}</td>
+                  <td style={{ padding: 14 }}>{item.email}</td>
+                  <td style={{ padding: 14 }}>{item.steps}</td>
+                  <td style={{ padding: 14 }}>{item.sleep}</td>
+                  <td style={{ padding: 14 }}>{item.water}</td>
+                  <td style={{ padding: 14 }}>{item.weight}</td>
+                  <td style={{ padding: 14 }}>
+                    <button
+                      onClick={() => handleDelete(item._id)}
+                      style={{
+                        background: "#ef4444",
+                        color: "#fff",
+                        border: "none",
+                        padding: "6px 12px",
+                        borderRadius: 6,
+                        cursor: "pointer"
+                      }}
+                    >
+                      删除
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -316,16 +378,65 @@ export default function AdminRecords() {
           </table>
 
           {sortedRecords.length === 0 && (
-            <div style={{ textAlign: "center", padding: 30 }}>
+            <div style={{ textAlign: "center", padding: 30, color: "#64748b" }}>
               暂无数据
             </div>
           )}
 
           {sortedRecords.length > 0 && (
-            <div style={{ marginTop: 20, textAlign: "center" }}>
-              <button onClick={() => setCurrentPage(p => Math.max(1,p-1))}>上一页</button>
-              <span> {currentPage} / {totalPages} </span>
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages,p+1))}>下一页</button>
+            <div
+              style={{
+                marginTop: 20,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 12
+              }}
+            >
+              <div style={{ color: "#64748b", fontSize: 14 }}>
+                共 {sortedRecords.length} 条，每页 20 条
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: "8px 14px",
+                    background: currentPage === 1 ? "#cbd5e1" : "#2563eb",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 10,
+                    cursor: currentPage === 1 ? "not-allowed" : "pointer"
+                  }}
+                >
+                  上一页
+                </button>
+
+                <span style={{ color: "#334155", minWidth: 72, textAlign: "center" }}>
+                  {currentPage} / {totalPages}
+                </span>
+
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  style={{
+                    padding: "8px 14px",
+                    background:
+                      currentPage === totalPages ? "#cbd5e1" : "#2563eb",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 10,
+                    cursor:
+                      currentPage === totalPages ? "not-allowed" : "pointer"
+                  }}
+                >
+                  下一页
+                </button>
+              </div>
             </div>
           )}
         </div>

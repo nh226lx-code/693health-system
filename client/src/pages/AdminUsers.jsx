@@ -43,9 +43,9 @@ export default function AdminUsers() {
 
   const getSortIcon = (field) => {
     if (sortField === field) {
-      return sortOrder === "asc" ? "↑" : "↓";
+      return sortOrder === "asc" ? "▲" : "▼";
     }
-    return "↕";
+    return <span style={{ color: "#cbd5e1" }}>⇅</span>;
   };
 
   const filteredUsers = useMemo(() => {
