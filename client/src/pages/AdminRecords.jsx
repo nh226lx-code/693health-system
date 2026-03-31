@@ -8,11 +8,22 @@ export default function AdminRecords() {
   const [sortField, setSortField] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   const pageSize = 20;
 
+  const formatDateText = (value) => {
+    if (!value) return "";
+    const text = String(value).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+    const date = new Date(text);
+    if (Number.isNaN(date.getTime())) return text;
+    return date.toISOString().slice(0, 10);
+  };
+
   const fetchRecords = async () => {
     try {
+      setLoading(true);
       const res = await API.get("/health?_t=" + Date.now());
 
       const list = (res.data || []).map((item) => {
@@ -23,7 +34,8 @@ export default function AdminRecords() {
           _id: item._id,
           user: rawUser || "unknown",
           email,
-          date: item.date || "",
+          username: email ? email.split("@")[0] : "unknown",
+          date: formatDateText(item.date || ""),
           steps: Number(item.steps) || 0,
           sleep: Number(item.sleep) || 0,
           water: Number(item.water) || 0,
@@ -34,6 +46,8 @@ export default function AdminRecords() {
       setRecords(list);
     } catch {
       setRecords([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -80,7 +94,7 @@ export default function AdminRecords() {
 
     return records.filter((item) => {
       const email = String(item.email || "").toLowerCase();
-      const userId = email ? email.split("@")[0] : "";
+      const userId = String(item.username || "").toLowerCase();
 
       if (email === "test@admin.com") {
         return false;
@@ -104,9 +118,7 @@ export default function AdminRecords() {
           return sortOrder === "asc" ? t1 - t2 : t2 - t1;
         }
 
-        const e1 = String(a.email || "").toLowerCase();
-        const e2 = String(b.email || "").toLowerCase();
-        return e1.localeCompare(e2);
+        return String(a.email || "").localeCompare(String(b.email || ""));
       }
 
       if (["steps", "sleep", "water", "weight"].includes(sortField)) {
@@ -117,7 +129,7 @@ export default function AdminRecords() {
           return sortOrder === "asc" ? n1 - n2 : n2 - n1;
         }
 
-        return 0;
+        return String(a.email || "").localeCompare(String(b.email || ""));
       }
 
       const v1 = String(a[sortField] || "").toLowerCase();
@@ -155,7 +167,7 @@ export default function AdminRecords() {
     const rows = sortedRecords.map((item, i) => [
       i + 1,
       item.date,
-      item.email ? item.email.split("@")[0] : "unknown",
+      item.username || "unknown",
       item.email,
       item.steps,
       item.sleep,
@@ -209,6 +221,25 @@ export default function AdminRecords() {
     return result.map((item) => item.replace(/^"|"$/g, "").trim());
   };
 
+  const createUserIfNeeded = async (email, username) => {
+    if (!email || String(email).toLowerCase() === "test@admin.com") return;
+
+    try {
+      await API.post("/users", {
+        email: String(email).trim(),
+        username: username || String(email).split("@")[0],
+        password: "123456",
+        role: "user"
+      });
+    } catch {}
+  };
+
+  const createRecord = async (payload) => {
+    try {
+      await API.post("/health", payload);
+    } catch {}
+  };
+
   const handleImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -235,6 +266,8 @@ export default function AdminRecords() {
           header.includes("日期") &&
           header.includes("邮箱");
 
+        const taskList = [];
+
         for (let i = 1; i < rows.length; i++) {
           const cols = parseCSVLine(rows[i]);
           if (!cols.length) continue;
@@ -248,17 +281,17 @@ export default function AdminRecords() {
           let weight = 0;
 
           if (isExportTemplate) {
-            email = cols[3] || "";
-            username = cols[2] || "";
-            date = cols[1] || "";
+            email = String(cols[3] || "").trim();
+            username = String(cols[2] || "").trim();
+            date = String(cols[1] || "").trim();
             steps = cols[4] || 0;
             sleep = cols[5] || 0;
             water = cols[6] || 0;
             weight = cols[7] || 0;
           } else {
-            email = cols[0] || "";
-            username = cols[1] || "";
-            date = cols[2] || "";
+            email = String(cols[0] || "").trim();
+            username = String(cols[1] || "").trim();
+            date = String(cols[2] || "").trim();
             steps = cols[3] || 0;
             sleep = cols[4] || 0;
             water = cols[5] || 0;
@@ -267,29 +300,25 @@ export default function AdminRecords() {
 
           if (!email || !date) continue;
 
-          try {
-            await API.post("/users", {
-              email,
-              username: username || email.split("@")[0],
-              password: "123456",
-              role: "user"
-            });
-          } catch {}
+          taskList.push(
+            (async () => {
+              await createUserIfNeeded(email, username);
 
-          try {
-            await API.post("/health", {
-              user: `${email}-token`.trim(),
-              date,
-              steps: Number(steps) || 0,
-              sleep: Number(sleep) || 0,
-              water: Number(water) || 0,
-              weight: Number(weight) || 0
-            });
-          } catch {}
+              await createRecord({
+                user: `${email}-token`,
+                date: formatDateText(date),
+                steps: Number(steps) || 0,
+                sleep: Number(sleep) || 0,
+                water: Number(water) || 0,
+                weight: Number(weight) || 0
+              });
+            })()
+          );
         }
 
+        await Promise.all(taskList);
         await fetchRecords();
-        setTimeout(() => fetchRecords(), 500);
+        window.dispatchEvent(new Event("storage"));
 
         alert("导入完成");
       } catch {
@@ -302,184 +331,358 @@ export default function AdminRecords() {
     reader.readAsText(file);
   };
 
-  const actionButtonStyle = {
-    padding: "10px 16px",
-    borderRadius: 10,
-    border: "none",
+  const toolbarButtonStyle = {
+    height: 44,
+    padding: "0 18px",
+    borderRadius: 12,
+    border: "1px solid transparent",
     cursor: "pointer",
-    fontWeight: 500,
+    fontWeight: 600,
     fontSize: 14,
-    lineHeight: "20px"
+    lineHeight: "20px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    whiteSpace: "nowrap",
+    transition: "all 0.2s ease"
+  };
+
+  const thStyle = {
+    padding: "16px 14px",
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#0f172a",
+    background: "#f8fafc",
+    borderBottom: "1px solid #e2e8f0",
+    whiteSpace: "nowrap"
+  };
+
+  const tdStyle = {
+    padding: "16px 14px",
+    fontSize: 14,
+    color: "#334155",
+    borderBottom: "1px solid #eef2f7",
+    whiteSpace: "nowrap"
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background:
+          "linear-gradient(180deg, #f8fbff 0%, #f3f6fb 45%, #eef3f9 100%)"
+      }}
+    >
       <Topbar />
 
-      <div style={{ padding: 28 }}>
+      <div style={{ padding: "28px 28px 36px" }}>
         <div
           style={{
-            marginBottom: 24,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 16,
-            flexWrap: "wrap"
+            marginBottom: 22,
+            padding: "24px 26px",
+            borderRadius: 24,
+            background: "rgba(255,255,255,0.92)",
+            border: "1px solid rgba(226,232,240,0.9)",
+            boxShadow: "0 18px 45px rgba(15,23,42,0.06)"
           }}
         >
-          <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>
-            健康记录管理
-          </h2>
-
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <input
-              type="text"
-              placeholder="输入用户ID或邮箱"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              style={{
-                padding: "10px 14px",
-                width: 240,
-                borderRadius: 10,
-                border: "1px solid #e2e8f0",
-                outline: "none",
-                fontSize: 14,
-                lineHeight: "20px"
-              }}
-            />
-
-            <button
-              style={{
-                ...actionButtonStyle,
-                background: "#2563eb",
-                color: "#fff"
-              }}
-            >
-              搜索
-            </button>
-
-            <input
-              id="import-file"
-              type="file"
-              accept=".csv"
-              onChange={handleImport}
-              style={{ display: "none" }}
-            />
-
-            <label htmlFor="import-file">
-              <span
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 18,
+              flexWrap: "wrap"
+            }}
+          >
+            <div>
+              <h2
                 style={{
-                  ...actionButtonStyle,
-                  display: "inline-block",
-                  background: "#2563eb",
-                  color: "#fff"
+                  margin: 0,
+                  fontSize: 30,
+                  fontWeight: 800,
+                  color: "#0f172a",
+                  letterSpacing: "0.3px"
                 }}
               >
-                导入数据
-              </span>
-            </label>
+                健康记录管理
+              </h2>
+              <div
+                style={{
+                  marginTop: 8,
+                  fontSize: 14,
+                  color: "#64748b"
+                }}
+              >
+                数据导入后即时刷新显示，支持按用户与日期快速检索
+              </div>
+            </div>
 
-            <button
-              onClick={exportCSV}
+            <div
               style={{
-                ...actionButtonStyle,
-                background: "#16a34a",
-                color: "#fff"
+                display: "flex",
+                gap: 12,
+                flexWrap: "wrap",
+                alignItems: "center"
               }}
             >
-              导出数据
-            </button>
+              <div
+                style={{
+                  position: "relative",
+                  width: 260,
+                  minWidth: 220
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="输入用户ID或邮箱"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  style={{
+                    width: "100%",
+                    height: 44,
+                    padding: "0 14px",
+                    borderRadius: 12,
+                    border: "1px solid #dbe3ee",
+                    outline: "none",
+                    fontSize: 14,
+                    color: "#0f172a",
+                    background: "#ffffff",
+                    boxShadow: "inset 0 1px 2px rgba(15,23,42,0.03)"
+                  }}
+                />
+              </div>
+
+              <button
+                style={{
+                  ...toolbarButtonStyle,
+                  background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+                  color: "#fff",
+                  boxShadow: "0 10px 22px rgba(37,99,235,0.22)"
+                }}
+              >
+                搜索
+              </button>
+
+              <input
+                id="import-file"
+                type="file"
+                accept=".csv"
+                onChange={handleImport}
+                style={{ display: "none" }}
+              />
+
+              <label htmlFor="import-file">
+                <span
+                  style={{
+                    ...toolbarButtonStyle,
+                    background: "linear-gradient(135deg, #2563eb 0%, #1e40af 100%)",
+                    color: "#fff",
+                    boxShadow: "0 10px 22px rgba(37,99,235,0.18)"
+                  }}
+                >
+                  导入数据
+                </span>
+              </label>
+
+              <button
+                onClick={exportCSV}
+                style={{
+                  ...toolbarButtonStyle,
+                  background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",
+                  color: "#fff",
+                  boxShadow: "0 10px 22px rgba(22,163,74,0.18)"
+                }}
+              >
+                导出数据
+              </button>
+            </div>
           </div>
         </div>
 
         <div
           style={{
-            background: "#fff",
-            borderRadius: 24,
-            padding: 20,
-            boxShadow: "0 10px 30px rgba(15,23,42,0.06)"
+            background: "rgba(255,255,255,0.96)",
+            borderRadius: 28,
+            border: "1px solid rgba(226,232,240,0.9)",
+            boxShadow: "0 18px 45px rgba(15,23,42,0.06)",
+            overflow: "hidden"
           }}
         >
-          <table
+          <div
             style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              textAlign: "center"
+              padding: "18px 22px",
+              borderBottom: "1px solid #edf2f7",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+              background:
+                "linear-gradient(180deg, rgba(248,250,252,0.95) 0%, rgba(255,255,255,0.96) 100%)"
             }}
           >
-            <thead>
-              <tr style={{ background: "#f8fafc" }}>
-                <th style={{ padding: 14 }}>序号</th>
-                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("date")}>
-                  日期 {getSortIcon("date")}
-                </th>
-                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("email")}>
-                  用户 {getSortIcon("email")}
-                </th>
-                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("email")}>
-                  邮箱 {getSortIcon("email")}
-                </th>
-                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("steps")}>
-                  步数 {getSortIcon("steps")}
-                </th>
-                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("sleep")}>
-                  睡眠 {getSortIcon("sleep")}
-                </th>
-                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("water")}>
-                  饮水 {getSortIcon("water")}
-                </th>
-                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("weight")}>
-                  体重 {getSortIcon("weight")}
-                </th>
-                <th style={{ padding: 14 }}>操作</th>
-              </tr>
-            </thead>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>
+              记录列表
+            </div>
+            <div style={{ fontSize: 13, color: "#64748b" }}>
+              共 {sortedRecords.length} 条记录
+            </div>
+          </div>
 
-            <tbody>
-              {pagedRecords.map((item, index) => (
-                <tr key={item._id}>
-                  <td style={{ padding: 14 }}>
-                    {(currentPage - 1) * pageSize + index + 1}
-                  </td>
-                  <td style={{ padding: 14 }}>{item.date}</td>
-                  <td style={{ padding: 14 }}>{item.email?.split("@")[0]}</td>
-                  <td style={{ padding: 14 }}>{item.email}</td>
-                  <td style={{ padding: 14 }}>{item.steps}</td>
-                  <td style={{ padding: 14 }}>{item.sleep}</td>
-                  <td style={{ padding: 14 }}>{item.water}</td>
-                  <td style={{ padding: 14 }}>{item.weight}</td>
-                  <td style={{ padding: 14 }}>
-                    <button
-                      onClick={() => handleDelete(item._id)}
-                      style={{
-                        background: "#ef4444",
-                        color: "#fff",
-                        border: "none",
-                        padding: "6px 12px",
-                        borderRadius: 6,
-                        cursor: "pointer",
-                        fontSize: 14,
-                        lineHeight: "20px"
-                      }}
-                    >
-                      删除
-                    </button>
-                  </td>
+          <div style={{ width: "100%", overflowX: "auto" }}>
+            <table
+              style={{
+                width: "100%",
+                minWidth: 1080,
+                borderCollapse: "separate",
+                borderSpacing: 0,
+                textAlign: "center"
+              }}
+            >
+              <thead>
+                <tr>
+                  <th style={thStyle}>序号</th>
+                  <th
+                    style={{ ...thStyle, cursor: "pointer" }}
+                    onClick={() => handleSort("date")}
+                  >
+                    日期 {getSortIcon("date")}
+                  </th>
+                  <th
+                    style={{ ...thStyle, cursor: "pointer" }}
+                    onClick={() => handleSort("username")}
+                  >
+                    用户 {getSortIcon("username")}
+                  </th>
+                  <th
+                    style={{ ...thStyle, cursor: "pointer" }}
+                    onClick={() => handleSort("email")}
+                  >
+                    邮箱 {getSortIcon("email")}
+                  </th>
+                  <th
+                    style={{ ...thStyle, cursor: "pointer" }}
+                    onClick={() => handleSort("steps")}
+                  >
+                    步数 {getSortIcon("steps")}
+                  </th>
+                  <th
+                    style={{ ...thStyle, cursor: "pointer" }}
+                    onClick={() => handleSort("sleep")}
+                  >
+                    睡眠 {getSortIcon("sleep")}
+                  </th>
+                  <th
+                    style={{ ...thStyle, cursor: "pointer" }}
+                    onClick={() => handleSort("water")}
+                  >
+                    饮水 {getSortIcon("water")}
+                  </th>
+                  <th
+                    style={{ ...thStyle, cursor: "pointer" }}
+                    onClick={() => handleSort("weight")}
+                  >
+                    体重 {getSortIcon("weight")}
+                  </th>
+                  <th style={thStyle}>操作</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
 
-          {sortedRecords.length === 0 && (
-            <div style={{ textAlign: "center", padding: 30, color: "#64748b" }}>
+              <tbody>
+                {pagedRecords.map((item, index) => (
+                  <tr
+                    key={item._id}
+                    style={{
+                      background: index % 2 === 0 ? "#ffffff" : "#fbfdff",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    <td style={tdStyle}>
+                      {(currentPage - 1) * pageSize + index + 1}
+                    </td>
+                    <td style={{ ...tdStyle, color: "#0f172a", fontWeight: 600 }}>
+                      {item.date}
+                    </td>
+                    <td style={tdStyle}>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          minWidth: 92,
+                          padding: "6px 12px",
+                          borderRadius: 999,
+                          background: "#eff6ff",
+                          color: "#1d4ed8",
+                          fontWeight: 700
+                        }}
+                      >
+                        {item.username}
+                      </span>
+                    </td>
+                    <td style={{ ...tdStyle, maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {item.email}
+                    </td>
+                    <td style={tdStyle}>{item.steps}</td>
+                    <td style={tdStyle}>{item.sleep}</td>
+                    <td style={tdStyle}>{item.water}</td>
+                    <td style={tdStyle}>{item.weight}</td>
+                    <td style={tdStyle}>
+                      <button
+                        onClick={() => handleDelete(item._id)}
+                        style={{
+                          height: 38,
+                          padding: "0 16px",
+                          borderRadius: 10,
+                          border: "none",
+                          cursor: "pointer",
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: "#fff",
+                          background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                          boxShadow: "0 10px 20px rgba(239,68,68,0.18)"
+                        }}
+                      >
+                        删除
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {!loading && sortedRecords.length === 0 && (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "54px 20px",
+                color: "#64748b",
+                fontSize: 15
+              }}
+            >
               暂无数据
+            </div>
+          )}
+
+          {loading && (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "54px 20px",
+                color: "#64748b",
+                fontSize: 15
+              }}
+            >
+              数据加载中...
             </div>
           )}
 
           {sortedRecords.length > 0 && (
             <div
               style={{
-                marginTop: 20,
+                padding: "18px 22px 22px",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
@@ -487,48 +690,71 @@ export default function AdminRecords() {
                 gap: 12
               }}
             >
-              <div style={{ color: "#64748b", fontSize: 14 }}>
+              <div
+                style={{
+                  color: "#64748b",
+                  fontSize: 14
+                }}
+              >
                 共 {sortedRecords.length} 条，每页 20 条
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10
+                }}
+              >
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   style={{
-                    padding: "8px 14px",
-                    background: currentPage === 1 ? "#cbd5e1" : "#2563eb",
+                    height: 40,
+                    padding: "0 16px",
+                    background:
+                      currentPage === 1
+                        ? "#cbd5e1"
+                        : "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
                     color: "#fff",
                     border: "none",
                     borderRadius: 10,
                     cursor: currentPage === 1 ? "not-allowed" : "pointer",
                     fontSize: 14,
-                    lineHeight: "20px"
+                    fontWeight: 700
                   }}
                 >
                   上一页
                 </button>
 
-                <span style={{ color: "#334155", minWidth: 72, textAlign: "center" }}>
+                <span
+                  style={{
+                    minWidth: 86,
+                    textAlign: "center",
+                    color: "#334155",
+                    fontSize: 14,
+                    fontWeight: 700
+                  }}
+                >
                   {currentPage} / {totalPages}
                 </span>
 
                 <button
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                   style={{
-                    padding: "8px 14px",
+                    height: 40,
+                    padding: "0 16px",
                     background:
-                      currentPage === totalPages ? "#cbd5e1" : "#2563eb",
+                      currentPage === totalPages
+                        ? "#cbd5e1"
+                        : "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
                     color: "#fff",
                     border: "none",
                     borderRadius: 10,
-                    cursor:
-                      currentPage === totalPages ? "not-allowed" : "pointer",
+                    cursor: currentPage === totalPages ? "not-allowed" : "pointer",
                     fontSize: 14,
-                    lineHeight: "20px"
+                    fontWeight: 700
                   }}
                 >
                   下一页

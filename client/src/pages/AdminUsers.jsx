@@ -24,8 +24,6 @@ export default function AdminUsers() {
 
   useEffect(() => {
     fetchUsers();
-    const timer = setInterval(fetchUsers, 2000);
-    return () => clearInterval(timer);
   }, []);
 
   const handleDelete = async (id) => {
@@ -45,11 +43,7 @@ export default function AdminUsers() {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      if (field === "_id") {
-        setSortOrder("desc");
-      } else {
-        setSortOrder("asc");
-      }
+      setSortOrder(field === "_id" ? "desc" : "asc");
     }
   };
 
@@ -83,8 +77,8 @@ export default function AdminUsers() {
         return sortOrder === "asc" ? t1 - t2 : t2 - t1;
       }
 
-      let v1 = String(a[sortField] || "").toLowerCase();
-      let v2 = String(b[sortField] || "").toLowerCase();
+      const v1 = String(a[sortField] || "").toLowerCase();
+      const v2 = String(b[sortField] || "").toLowerCase();
 
       if (v1 < v2) return sortOrder === "asc" ? -1 : 1;
       if (v1 > v2) return sortOrder === "asc" ? 1 : -1;
@@ -99,12 +93,6 @@ export default function AdminUsers() {
   useEffect(() => {
     setCurrentPage(1);
   }, [keyword, sortField, sortOrder]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
 
   const pagedUsers = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -123,26 +111,19 @@ export default function AdminUsers() {
 
     const csvContent = [headers, ...rows]
       .map((row) =>
-        row
-          .map((cell) => {
-            const value = cell ?? "";
-            const text = String(value).replace(/"/g, '""');
-            return `"${text}"`;
-          })
-          .join(",")
+        row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")
       )
       .join("\n");
 
     const blob = new Blob(["\ufeff" + csvContent], {
       type: "text/csv;charset=utf-8;"
     });
-    const url = window.URL.createObjectURL(blob);
 
+    const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = "users_data.csv";
     a.click();
-
     window.URL.revokeObjectURL(url);
   };
 
@@ -157,22 +138,27 @@ export default function AdminUsers() {
         const text = String(event.target?.result || "").replace(/^\ufeff/, "");
         const rows = text.split(/\r?\n/).filter(Boolean);
 
+        const tasks = [];
+
         for (let i = 1; i < rows.length; i++) {
           const cols = rows[i].split(",");
-          const email = cols[0];
+          const email = (cols[0] || "").trim();
 
           if (!email) continue;
 
-          await API.post("/users", {
-            email,
-            username: email.split("@")[0],
-            password: "123456",
-            role: "user"
-          }).catch(()=>{});
+          tasks.push(
+            API.post("/users", {
+              email,
+              username: email.split("@")[0],
+              password: "123456",
+              role: "user"
+            }).catch(() => {})
+          );
         }
 
+        await Promise.all(tasks);
         await fetchUsers();
-        setTimeout(fetchUsers, 500);
+        window.dispatchEvent(new Event("storage"));
       } catch {}
 
       e.target.value = "";
@@ -181,8 +167,21 @@ export default function AdminUsers() {
     reader.readAsText(file);
   };
 
+  const btn = {
+    height: 42,
+    padding: "0 18px",
+    borderRadius: 12,
+    border: "none",
+    cursor: "pointer",
+    fontSize: 14,
+    fontWeight: 700,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center"
+  };
+
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+    <div style={{ minHeight: "100vh", background: "#f3f6fb" }}>
       <Topbar />
 
       <div style={{ padding: 28 }}>
@@ -191,38 +190,37 @@ export default function AdminUsers() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 20,
-            gap: 16,
-            flexWrap: "wrap"
+            marginBottom: 22,
+            flexWrap: "wrap",
+            gap: 14
           }}
         >
-          <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>
+          <h2 style={{ margin: 0, fontSize: 30, fontWeight: 800 }}>
             用户管理
           </h2>
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+              alignItems: "center"
+            }}
+          >
             <input
-              placeholder="按用户名或邮箱搜索"
+              placeholder="搜索用户ID或邮箱"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               style={{
-                padding: 10,
+                height: 42,
+                padding: "0 12px",
                 width: 260,
                 borderRadius: 10,
-                border: "1px solid #e2e8f0"
+                border: "1px solid #dbe3ee"
               }}
             />
 
-            <button
-              style={{
-                padding: "10px 16px",
-                background: "#2563eb",
-                color: "#fff",
-                border: "none",
-                borderRadius: 10,
-                fontSize: 14
-              }}
-            >
+            <button style={{ ...btn, background: "#2563eb", color: "#fff" }}>
               搜索
             </button>
 
@@ -235,30 +233,14 @@ export default function AdminUsers() {
             />
 
             <label htmlFor="import-user">
-              <span
-                style={{
-                  padding: "10px 16px",
-                  background: "#2563eb",
-                  color: "#fff",
-                  borderRadius: 10,
-                  cursor: "pointer",
-                  fontSize: 14
-                }}
-              >
+              <span style={{ ...btn, background: "#2563eb", color: "#fff" }}>
                 导入用户
               </span>
             </label>
 
             <button
               onClick={exportCSV}
-              style={{
-                padding: "10px 18px",
-                background: "#16a34a",
-                color: "#fff",
-                border: "none",
-                borderRadius: 10,
-                fontSize: 14
-              }}
+              style={{ ...btn, background: "#16a34a", color: "#fff" }}
             >
               导出用户
             </button>
@@ -269,8 +251,8 @@ export default function AdminUsers() {
           style={{
             background: "#fff",
             borderRadius: 24,
-            padding: 20,
-            boxShadow: "0 10px 30px rgba(15,23,42,0.06)"
+            padding: 22,
+            boxShadow: "0 18px 40px rgba(15,23,42,0.06)"
           }}
         >
           <table
@@ -282,23 +264,23 @@ export default function AdminUsers() {
           >
             <thead>
               <tr style={{ background: "#f8fafc" }}>
-                <th style={{ padding: 14 }}>序号</th>
+                <th style={{ padding: 16 }}>序号</th>
 
-                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("_id")}>
+                <th style={{ padding: 16, cursor: "pointer" }} onClick={() => handleSort("_id")}>
                   日期 {getSortIcon("_id")}
                 </th>
 
-                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("username")}>
+                <th style={{ padding: 16, cursor: "pointer" }} onClick={() => handleSort("username")}>
                   用户ID {getSortIcon("username")}
                 </th>
 
-                <th style={{ padding: 14, cursor: "pointer" }} onClick={() => handleSort("email")}>
+                <th style={{ padding: 16, cursor: "pointer" }} onClick={() => handleSort("email")}>
                   邮箱 {getSortIcon("email")}
                 </th>
 
-                <th style={{ padding: 14 }}>角色</th>
+                <th style={{ padding: 16 }}>角色</th>
 
-                <th style={{ padding: 14 }}>操作</th>
+                <th style={{ padding: 16 }}>操作</th>
               </tr>
             </thead>
 
@@ -309,30 +291,32 @@ export default function AdminUsers() {
 
                 return (
                   <tr key={user._id}>
-                    <td style={{ padding: 14 }}>
+                    <td style={{ padding: 16 }}>
                       {(currentPage - 1) * pageSize + index + 1}
                     </td>
 
-                    <td style={{ padding: 14 }}>{date}</td>
+                    <td style={{ padding: 16 }}>{date}</td>
 
-                    <td style={{ padding: 14 }}>
+                    <td style={{ padding: 16 }}>
                       {user.username || (user.email ? user.email.split("@")[0] : "unknown")}
                     </td>
 
-                    <td style={{ padding: 14 }}>{user.email}</td>
+                    <td style={{ padding: 16 }}>{user.email}</td>
 
-                    <td style={{ padding: 14 }}>{user.role}</td>
+                    <td style={{ padding: 16 }}>{user.role}</td>
 
-                    <td style={{ padding: 14 }}>
+                    <td style={{ padding: 16 }}>
                       <button
                         onClick={() => handleDelete(user._id)}
                         style={{
-                          background: "#ef4444",
-                          color: "#fff",
+                          height: 36,
+                          padding: "0 16px",
+                          borderRadius: 10,
                           border: "none",
-                          padding: "6px 12px",
-                          borderRadius: 6,
-                          cursor: "pointer"
+                          cursor: "pointer",
+                          fontWeight: 700,
+                          color: "#fff",
+                          background: "#ef4444"
                         }}
                       >
                         删除
@@ -345,8 +329,8 @@ export default function AdminUsers() {
           </table>
 
           {sortedUsers.length === 0 && (
-            <div style={{ textAlign: "center", padding: 30 }}>
-              无匹配用户
+            <div style={{ textAlign: "center", padding: 40 }}>
+              无数据
             </div>
           )}
         </div>
