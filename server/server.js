@@ -33,67 +33,65 @@ const UserSchema = new mongoose.Schema({
 const Health = mongoose.models.Health || mongoose.model("Health", HealthSchema);
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
 
+const clean = (val) => {
+  let v = String(val || "").trim();
+  v = v.replace(/-token$/i, "");
+  v = v.replace(/^"+|"+$/g, "").trim();
+  v = v.replace(/[\u0000-\u001f]/g, "").trim();
+  if (v.includes(",")) v = v.split(",")[0].trim();
+  return v;
+};
+
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "请输入邮箱和密码" });
-    }
+    const user = await User.findOne({ email: clean(email) });
+    if (!user) return res.status(400).json({ message: "用户不存在" });
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "用户不存在" });
-    }
-
-    let isMatch = false;
+    let ok = false;
 
     if (user.password && user.password.startsWith("$2")) {
-      isMatch = await bcrypt.compare(password, user.password);
+      ok = await bcrypt.compare(password, user.password);
     } else {
-      isMatch = password === user.password;
+      ok = password === user.password;
     }
 
-    if (!isMatch) {
-      return res.status(400).json({ message: "密码错误" });
-    }
+    if (!ok) return res.status(400).json({ message: "密码错误" });
 
     const role = user.role === "admin" ? "admin" : "user";
-    const token = role === "admin" ? "admin-token" : email + "-token";
 
     return res.json({
-      token,
+      token: role === "admin" ? "admin-token" : user.email + "-token",
       role,
-      userId: email
+      userId: user.email
     });
   } catch {
-    return res.status(500).json({ message: "服务器错误" });
+    res.status(500).json({});
   }
 });
 
 app.get("/api/users", async (req, res) => {
   try {
-    const users = await User.find().select("-password");
+    const users = await User.find();
 
-    const clean = users.map((u) => {
-      let email = String(u.email || "").trim();
-
-      email = email.replace(/-token$/i, "");
-      email = email.replace(/^"+|"+$/g, "").trim();
-      email = email.replace(/[\u0000-\u001f]/g, "").trim();
-
-      if (email.includes(",")) {
-        email = email.split(",")[0].trim();
+    for (let u of users) {
+      const newEmail = clean(u.email);
+      if (u.email !== newEmail) {
+        u.email = newEmail;
+        u.username = newEmail.split("@")[0];
+        await u.save();
       }
+    }
 
-      return {
-        ...u.toObject(),
-        email,
-        username: email ? email.split("@")[0] : u.username
-      };
-    });
+    const data = users.map((u) => ({
+      _id: u._id,
+      email: u.email,
+      username: u.username,
+      role: u.role
+    }));
 
-    res.json(clean);
+    res.json(data);
   } catch {
     res.json([]);
   }
@@ -101,44 +99,23 @@ app.get("/api/users", async (req, res) => {
 
 app.post("/api/users", async (req, res) => {
   try {
-    const { email, password, role, username } = req.body;
+    let email = clean(req.body.email);
 
-    if (!email) {
-      return res.json({ message: "fail" });
-    }
+    if (!email) return res.json({});
 
-    const cleanEmail = String(email)
-      .trim()
-      .replace(/-token$/i, "")
-      .replace(/^"+|"+$/g, "")
-      .replace(/[\u0000-\u001f]/g, "");
-
-    const exist = await User.findOne({ email: cleanEmail });
-
-    if (exist) {
-      return res.json({
-        _id: exist._id,
-        email: exist.email,
-        role: exist.role
-      });
-    }
-
-    const hash = await bcrypt.hash(password || "123456", 10);
+    const exist = await User.findOne({ email });
+    if (exist) return res.json(exist);
 
     const user = await User.create({
-      email: cleanEmail,
-      username: username || cleanEmail.split("@")[0],
-      password: hash,
-      role: role === "admin" ? "admin" : "user"
+      email,
+      username: email.split("@")[0],
+      password: await bcrypt.hash("123456", 10),
+      role: "user"
     });
 
-    res.json({
-      _id: user._id,
-      email: user.email,
-      role: user.role
-    });
+    res.json(user);
   } catch {
-    res.json({ message: "error" });
+    res.json({});
   }
 });
 
@@ -146,88 +123,64 @@ app.delete("/api/users/:id", async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
 
-    if (user && user.email) {
-      await Health.deleteMany({ user: String(user.email).trim() });
+    if (user) {
+      await Health.deleteMany({ user: user.email });
     }
 
-    res.json({ message: "ok" });
+    res.json({ ok: true });
   } catch {
-    res.json({ message: "error" });
+    res.json({});
   }
 });
 
 app.post("/api/health", async (req, res) => {
   try {
+    const email = clean(req.body.user);
+    if (!email) return res.json({});
+
     const date = new Date(
-      req.body.date || req.body.recordDate || new Date()
+      req.body.date || new Date()
     ).toISOString().slice(0, 10);
-
-    let user = String(req.body.user || "").trim();
-
-    user = user.replace(/-token$/i, "").trim();
-    user = user.replace(/^"+|"+$/g, "").trim();
-    user = user.replace(/[\u0000-\u001f]/g, "").trim();
-
-    if (user.includes(",")) {
-      user = user.split(",")[0].trim();
-    }
-
-    if (!user.includes("@")) {
-      return res.json({ message: "error" });
-    }
-
-    const email = user;
 
     const existUser = await User.findOne({ email });
 
     if (!existUser) {
-      const hash = await bcrypt.hash("123456", 10);
-
       await User.create({
         email,
         username: email.split("@")[0],
-        password: hash,
+        password: await bcrypt.hash("123456", 10),
         role: "user"
       });
     }
 
     await Health.create({
-      date,
       user: email,
+      date,
       steps: Number(req.body.steps) || 0,
       sleep: Number(req.body.sleep) || 0,
       water: Number(req.body.water) || 0,
       weight: Number(req.body.weight) || 0
     });
 
-    res.json({ message: "ok" });
+    res.json({ ok: true });
   } catch {
-    res.json({ message: "error" });
+    res.json({});
   }
 });
 
 app.get("/api/health", async (req, res) => {
   try {
-    const data = await Health.find().sort({ date: -1 });
+    const list = await Health.find().sort({ date: -1 });
 
-    const clean = data.map((item) => {
-      let user = String(item.user || "").trim();
-
-      user = user.replace(/-token$/i, "");
-      user = user.replace(/^"+|"+$/g, "").trim();
-      user = user.replace(/[\u0000-\u001f]/g, "").trim();
-
-      if (user.includes(",")) {
-        user = user.split(",")[0].trim();
+    for (let r of list) {
+      const cleanUser = clean(r.user);
+      if (r.user !== cleanUser) {
+        r.user = cleanUser;
+        await r.save();
       }
+    }
 
-      return {
-        ...item.toObject(),
-        user
-      };
-    });
-
-    res.json(clean);
+    res.json(list);
   } catch {
     res.json([]);
   }
@@ -236,23 +189,17 @@ app.get("/api/health", async (req, res) => {
 app.delete("/api/health/:id", async (req, res) => {
   try {
     await Health.findByIdAndDelete(req.params.id);
-    res.json({ message: "ok" });
+    res.json({ ok: true });
   } catch {
-    res.json({ message: "error" });
+    res.json({});
   }
 });
 
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
 app.get("*", (req, res) => {
-  if (req.originalUrl.startsWith("/api")) {
-    return res.status(404).json({ message: "API not found" });
-  }
+  if (req.originalUrl.startsWith("/api")) return res.status(404).end();
   res.sendFile(path.join(__dirname, "../client/dist/index.html"));
 });
 
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("Server running on port " + PORT);
-});
+app.listen(process.env.PORT || 5000);
