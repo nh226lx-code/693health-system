@@ -17,16 +17,21 @@ export default function AdminRecords() {
     try {
       const res = await API.get("/health");
 
-      const list = (res.data || []).map((item) => ({
-        _id: item._id,
-        user: item.user || "unknown",
-        email: (item.user || "").replace("-token", ""),
-        date: item.date || "",
-        steps: item.steps || 0,
-        sleep: item.sleep || 0,
-        water: item.water || 0,
-        weight: item.weight || 0
-      }));
+      const list = (res.data || []).map((item) => {
+        const rawUser = item.user || "";
+        const email = typeof rawUser === "string" ? rawUser.replace(/-token$/i, "") : "";
+
+        return {
+          _id: item._id,
+          user: rawUser || "unknown",
+          email,
+          date: item.date || "",
+          steps: Number(item.steps) || 0,
+          sleep: Number(item.sleep) || 0,
+          water: Number(item.water) || 0,
+          weight: Number(item.weight) || 0
+        };
+      });
 
       setRecords(list);
     } catch {
@@ -38,17 +43,28 @@ export default function AdminRecords() {
     fetchRecords();
   }, []);
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     const ok = window.confirm("确定删除该记录？");
     if (!ok) return;
+
+    try {
+      await API.delete(`/health/${id}`);
+    } catch {}
+
     setRecords((prev) => prev.filter((item) => item._id !== id));
   };
 
   const handleSort = (field) => {
     if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setSortField(field);
+
+    if (field === "date" || ["steps", "sleep", "water", "weight"].includes(field)) {
+      setSortOrder("desc");
     } else {
-      setSortField(field);
       setSortOrder("asc");
     }
   };
@@ -61,17 +77,26 @@ export default function AdminRecords() {
   };
 
   const filteredRecords = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+
     return records.filter((item) => {
-      const email = item.email || "";
+      const email = String(item.email || "").toLowerCase();
+      const rawUser = String(item.user || "").toLowerCase();
+      const userId = email ? email.split("@")[0] : "";
 
-      if (email.toLowerCase().includes("admin")) return false;
+      if (
+        rawUser === "admin-token" ||
+        email === "admin" ||
+        email === "test@admin.com" ||
+        userId === "admin" ||
+        email.includes("admin-token")
+      ) {
+        return false;
+      }
 
-      const id = email ? email.split("@")[0] : "";
+      if (!kw) return true;
 
-      return (
-        id.toLowerCase().includes(keyword.toLowerCase()) ||
-        email.toLowerCase().includes(keyword.toLowerCase())
-      );
+      return userId.includes(kw) || email.includes(kw);
     });
   }, [records, keyword]);
 
@@ -79,28 +104,32 @@ export default function AdminRecords() {
     const list = [...filteredRecords];
 
     list.sort((a, b) => {
-      let v1 = a[sortField];
-      let v2 = b[sortField];
-
       if (sortField === "date") {
-        const d1 = new Date(v1);
-        const d2 = new Date(v2);
+        const t1 = new Date(a.date || "1970-01-01").getTime();
+        const t2 = new Date(b.date || "1970-01-01").getTime();
 
-        if (d1 < d2) return sortOrder === "asc" ? -1 : 1;
-        if (d1 > d2) return sortOrder === "asc" ? 1 : -1;
+        if (t1 !== t2) {
+          return sortOrder === "asc" ? t1 - t2 : t2 - t1;
+        }
 
-        const e1 = (a.email || "").toLowerCase();
-        const e2 = (b.email || "").toLowerCase();
+        const e1 = String(a.email || "").toLowerCase();
+        const e2 = String(b.email || "").toLowerCase();
         return e1.localeCompare(e2);
       }
 
       if (["steps", "sleep", "water", "weight"].includes(sortField)) {
-        v1 = Number(v1) || 0;
-        v2 = Number(v2) || 0;
-      } else {
-        v1 = String(v1 || "").toLowerCase();
-        v2 = String(v2 || "").toLowerCase();
+        const n1 = Number(a[sortField]) || 0;
+        const n2 = Number(b[sortField]) || 0;
+
+        if (n1 !== n2) {
+          return sortOrder === "asc" ? n1 - n2 : n2 - n1;
+        }
+
+        return 0;
       }
+
+      const v1 = String(a[sortField] || "").toLowerCase();
+      const v2 = String(b[sortField] || "").toLowerCase();
 
       if (v1 < v2) return sortOrder === "asc" ? -1 : 1;
       if (v1 > v2) return sortOrder === "asc" ? 1 : -1;
@@ -160,6 +189,34 @@ export default function AdminRecords() {
     window.URL.revokeObjectURL(url);
   };
 
+  const parseCSVLine = (line) => {
+    const result = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const next = line[i + 1];
+
+      if (char === '"') {
+        if (inQuotes && next === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === "," && !inQuotes) {
+        result.push(current.trim());
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+
+    result.push(current.trim());
+    return result.map((item) => item.replace(/^"|"$/g, "").trim());
+  };
+
   const handleImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -168,40 +225,78 @@ export default function AdminRecords() {
 
     reader.onload = async (event) => {
       try {
-        const text = event.target.result;
-        const rows = text.split("\n").slice(1);
+        const text = String(event.target?.result || "").replace(/^\ufeff/, "");
+        const rows = text
+          .split(/\r?\n/)
+          .map((row) => row.trim())
+          .filter(Boolean);
 
-        for (let row of rows) {
-          if (!row.trim()) continue;
+        if (rows.length <= 1) {
+          alert("导入失败，请检查CSV格式");
+          e.target.value = "";
+          return;
+        }
 
-          const [email, username, date, steps, sleep, water, weight] = row
-            .split(",")
-            .map((item) => item.trim().replace(/^"|"$/g, ""));
+        const header = parseCSVLine(rows[0]).map((item) => item.toLowerCase());
+        const isExportTemplate =
+          header.includes("序号") &&
+          header.includes("日期") &&
+          header.includes("邮箱");
+
+        for (let i = 1; i < rows.length; i++) {
+          const cols = parseCSVLine(rows[i]);
+          if (!cols.length) continue;
+
+          let email = "";
+          let username = "";
+          let date = "";
+          let steps = 0;
+          let sleep = 0;
+          let water = 0;
+          let weight = 0;
+
+          if (isExportTemplate) {
+            email = cols[3] || "";
+            username = cols[2] || "";
+            date = cols[1] || "";
+            steps = cols[4] || 0;
+            sleep = cols[5] || 0;
+            water = cols[6] || 0;
+            weight = cols[7] || 0;
+          } else {
+            email = cols[0] || "";
+            username = cols[1] || "";
+            date = cols[2] || "";
+            steps = cols[3] || 0;
+            sleep = cols[4] || 0;
+            water = cols[5] || 0;
+            weight = cols[6] || 0;
+          }
 
           if (!email || !date) continue;
 
           try {
             await API.post("/users", {
               email,
-              username,
+              username: username || email.split("@")[0],
               role: "user"
             });
           } catch {}
 
           try {
             await API.post("/health", {
-              user: email + "-token",
+              user: `${email}-token`,
               date,
-              steps: Number(steps),
-              sleep: Number(sleep),
-              water: Number(water),
-              weight: Number(weight)
+              steps: Number(steps) || 0,
+              sleep: Number(sleep) || 0,
+              water: Number(water) || 0,
+              weight: Number(weight) || 0
             });
           } catch {}
         }
 
-        alert("导入完成");
         await fetchRecords();
+        alert("导入完成");
       } catch {
         alert("导入失败，请检查CSV格式");
       }
@@ -210,6 +305,16 @@ export default function AdminRecords() {
     };
 
     reader.readAsText(file);
+  };
+
+  const actionButtonStyle = {
+    padding: "10px 16px",
+    borderRadius: 10,
+    border: "none",
+    cursor: "pointer",
+    fontWeight: 500,
+    fontSize: 14,
+    lineHeight: "20px"
   };
 
   return (
@@ -242,19 +347,17 @@ export default function AdminRecords() {
                 width: 240,
                 borderRadius: 10,
                 border: "1px solid #e2e8f0",
-                outline: "none"
+                outline: "none",
+                fontSize: 14,
+                lineHeight: "20px"
               }}
             />
 
             <button
               style={{
-                padding: "10px 16px",
+                ...actionButtonStyle,
                 background: "#2563eb",
-                color: "#fff",
-                border: "none",
-                borderRadius: 10,
-                cursor: "pointer",
-                fontWeight: 500
+                color: "#fff"
               }}
             >
               搜索
@@ -272,12 +375,14 @@ export default function AdminRecords() {
               <span
                 style={{
                   display: "inline-block",
-                  padding: "10px 18px",
+                  padding: "10px 16px",
                   background: "#2563eb",
                   color: "#fff",
                   borderRadius: 10,
                   cursor: "pointer",
-                  fontWeight: 500
+                  fontWeight: 500,
+                  fontSize: 14,
+                  lineHeight: "20px"
                 }}
               >
                 导入数据
@@ -287,13 +392,9 @@ export default function AdminRecords() {
             <button
               onClick={exportCSV}
               style={{
-                padding: "10px 18px",
+                ...actionButtonStyle,
                 background: "#16a34a",
-                color: "#fff",
-                border: "none",
-                borderRadius: 10,
-                cursor: "pointer",
-                fontWeight: 500
+                color: "#fff"
               }}
             >
               导出数据
@@ -387,7 +488,9 @@ export default function AdminRecords() {
                         border: "none",
                         padding: "6px 12px",
                         borderRadius: 6,
-                        cursor: "pointer"
+                        cursor: "pointer",
+                        fontSize: 14,
+                        lineHeight: "20px"
                       }}
                     >
                       删除
@@ -429,7 +532,9 @@ export default function AdminRecords() {
                     color: "#fff",
                     border: "none",
                     borderRadius: 10,
-                    cursor: currentPage === 1 ? "not-allowed" : "pointer"
+                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                    fontSize: 14,
+                    lineHeight: "20px"
                   }}
                 >
                   上一页
@@ -452,7 +557,9 @@ export default function AdminRecords() {
                     border: "none",
                     borderRadius: 10,
                     cursor:
-                      currentPage === totalPages ? "not-allowed" : "pointer"
+                      currentPage === totalPages ? "not-allowed" : "pointer",
+                    fontSize: 14,
+                    lineHeight: "20px"
                   }}
                 >
                   下一页
