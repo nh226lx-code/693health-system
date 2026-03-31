@@ -110,10 +110,36 @@ app.post("/api/users", async (req, res) => {
       return res.json({ message: "fail" });
     }
 
-    const exist = await User.findOne({ email });
-    if (exist) {
-      return res.json({ message: "exist" });
+app.post("/api/users", async (req, res) => {
+  try {
+    const { email, password, role, username } = req.body;
+
+    if (!email) {
+      return res.json({ message: "fail" });
     }
+
+    const hash = await bcrypt.hash(password || "123456", 10);
+
+    const newUser = await User.findOneAndUpdate(
+      { email },
+      {
+        email,
+        username: username || email.split("@")[0],
+        password: hash,
+        role: role || "user"
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json({
+      _id: newUser._id,
+      email: newUser.email,
+      role: newUser.role
+    });
+  } catch {
+    res.json({ message: "error" });
+  }
+});
 
     const hash = await bcrypt.hash(password, 10);
     const savedRole = email === "test@admin.com" ? "admin" : (role || "user");
