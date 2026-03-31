@@ -249,7 +249,9 @@ export default function AdminRecords() {
 
     reader.onload = async (event) => {
       try {
-        const text = String(event.target?.result || "").replace(/^\ufeff/, "");
+        const text = String(event.target?.result || "")
+  .replace(/^\ufeff/, "")
+  .replace(/�/g, "");
         const rows = text
           .split(/\r?\n/)
           .map((row) => row.trim())

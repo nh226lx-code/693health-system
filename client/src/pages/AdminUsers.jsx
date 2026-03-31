@@ -180,7 +180,9 @@ export default function AdminUsers() {
 
     reader.onload = async (event) => {
       try {
-        const text = String(event.target?.result || "").replace(/^\ufeff/, "");
+        const text = String(event.target?.result || "")
+  .replace(/^\ufeff/, "")
+  .replace(/�/g, "");
         const rows = text
           .split(/\r?\n/)
           .map((row) => row.trim())
@@ -205,9 +207,7 @@ export default function AdminUsers() {
         let successCount = 0;
 
         for (let i = 1; i < rows.length; i++) {
-          const cols = rows[i]
-  .split(",")
-  .map((v) => v.replace(/^"|"$/g, "").trim());
+          const cols = parseCSVLine(rows[i]);
           if (!cols.length) continue;
 
           if (isUserOnlyTemplate) {
