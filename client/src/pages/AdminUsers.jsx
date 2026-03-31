@@ -22,9 +22,11 @@ export default function AdminUsers() {
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+useEffect(() => {
+  fetchUsers();
+  const timer = setInterval(fetchUsers, 2000);
+  return () => clearInterval(timer);
+}, []);
 
   const handleDelete = (id) => {
     const ok = window.confirm("确定删除该用户？");
