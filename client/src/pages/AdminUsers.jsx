@@ -28,10 +28,16 @@ export default function AdminUsers() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     const ok = window.confirm("确定删除该用户？");
     if (!ok) return;
-    setUsers((prev) => prev.filter((u) => u._id !== id));
+
+    try {
+      await API.delete(`/users/${id}`);
+      await fetchUsers();
+    } catch {
+      alert("删除失败");
+    }
   };
 
   const handleSort = (field) => {

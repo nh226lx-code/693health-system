@@ -47,9 +47,10 @@ export default function AdminRecords() {
 
     try {
       await API.delete(`/health/${id}`);
-    } catch {}
-
-    setRecords((prev) => prev.filter((item) => item._id !== id));
+      await fetchRecords();
+    } catch {
+      alert("删除失败");
+    }
   };
 
   const handleSort = (field) => {
@@ -79,16 +80,9 @@ export default function AdminRecords() {
 
     return records.filter((item) => {
       const email = String(item.email || "").toLowerCase();
-      const rawUser = String(item.user || "").toLowerCase();
       const userId = email ? email.split("@")[0] : "";
 
-      if (
-        rawUser === "admin-token" ||
-        email === "admin" ||
-        email === "test@admin.com" ||
-        userId === "admin" ||
-        email.includes("admin-token")
-      ) {
+      if (email === "test@admin.com") {
         return false;
       }
 
@@ -280,9 +274,7 @@ export default function AdminRecords() {
               password: "123456",
               role: "user"
             });
-          } catch {
-            continue;
-          }
+          } catch {}
 
           try {
             await API.post("/health", {

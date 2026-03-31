@@ -102,7 +102,6 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
-/* ===== 修复核心：用户一定存在（导入/创建统一逻辑）===== */
 app.post("/api/users", async (req, res) => {
   try {
     const { email, password, role, username } = req.body;
@@ -134,7 +133,22 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
-/* ===== 健康数据 ===== */
+/* 新增：删除用户 */
+app.delete("/api/users/:id", async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+
+    if (user && user.email) {
+      await Health.deleteMany({ user: user.email + "-token" });
+    }
+
+    res.json({ message: "ok" });
+  } catch {
+    res.json({ message: "error" });
+  }
+});
+
+/* 健康数据 */
 app.post("/api/health", async (req, res) => {
   try {
     const date = new Date(
@@ -158,6 +172,16 @@ app.post("/api/health", async (req, res) => {
       { upsert: true, new: true }
     );
 
+    res.json({ message: "ok" });
+  } catch {
+    res.json({ message: "error" });
+  }
+});
+
+/* 新增：删除健康记录 */
+app.delete("/api/health/:id", async (req, res) => {
+  try {
+    await Health.findByIdAndDelete(req.params.id);
     res.json({ message: "ok" });
   } catch {
     res.json({ message: "error" });
