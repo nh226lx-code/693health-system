@@ -56,7 +56,7 @@ export default function AdminUsers() {
 
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
-      if (u.role === "admin") return false;
+      if (String(u.role || "").toLowerCase() === "admin") return false;
 
       const email = (u.email || "").toLowerCase();
       const username = (u.username || "").toLowerCase();
