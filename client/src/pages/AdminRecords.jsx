@@ -188,7 +188,7 @@ const t2 = new Date(b.date).getTime();
       )
       .join("\n");
 
-    const blob = new Blob(["\ufeff" csvContent], {
+    const blob = new Blob(["\ufeff" + csvContent], {
       type: "text/csv;charset=utf-8;"
     });
 
