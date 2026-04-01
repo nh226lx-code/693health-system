@@ -179,7 +179,13 @@ for (let i = 1; i < lines.length; i++) {
 let count = 0;
 
 for (let row of data) {
-  const email = clean(row.email);
+  const raw =
+    row.email ||
+    row.Email ||
+    row.EMAIL ||
+    Object.values(row)[0];
+
+  const email = clean(raw);
 
   if (!email) continue;
 
