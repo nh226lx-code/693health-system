@@ -267,7 +267,8 @@ export default function AdminRecords() {
   };
 
   const handleImport = (e) => {
-    const file = e.target.files[0];
+  console.log("导入触发了");
+  const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
