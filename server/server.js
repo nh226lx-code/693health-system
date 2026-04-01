@@ -179,31 +179,24 @@ for (let i = 1; i < lines.length; i++) {
 let count = 0;
 
 for (let row of data) {
-  const raw =
-    row.email ||
-    row.Email ||
-    row.EMAIL ||
-    Object.values(row)[0];
-
-  const email = clean(raw);
+  const email = clean(row.email);
 
   if (!email) continue;
 
-  try {
-    const exist = await User.findOne({ email });
+  const exist = await User.findOne({ email });
 
-    if (!exist) {
-      await User.create({
-        email,
-        username: email.split("@")[0],
-        password: await bcrypt.hash("123456", 10),
-        role: "user"
-      });
-    }
+  if (!exist) {
+    await User.create({
+      email,
+      username: email.split("@")[0],
+      password: await bcrypt.hash("123456", 10),
+      role: "user"
+    });
+  }
 
-    count++;
-  } catch {}
+  count++;
 }
+
 
 res.json({ message: `导入成功 ${count} 条` });
   } catch {
