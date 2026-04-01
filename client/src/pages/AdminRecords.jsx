@@ -369,9 +369,7 @@ export default function AdminRecords() {
             weight: Number(weight) || 0
           });
 
-          if (added) {
-            successCount++;
-          }
+         successCount++;
         }
 
         await fetchRecords();
