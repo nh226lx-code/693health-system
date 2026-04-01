@@ -259,26 +259,7 @@ export default function AdminRecords() {
 
     if (!email || !date) return false;
 
-const createRecordIfNeeded = async (payload) => {
-  const email = cleanEmail(payload.user);
-  const date = formatDateText(payload.date);
 
-  if (!email || !date) return false;
-
-  try {
-    await API.post("/health", {
-      user: email,
-      date,
-      steps: Number(payload.steps) || 0,
-      sleep: Number(payload.sleep) || 0,
-      water: Number(payload.water) || 0,
-      weight: Number(payload.weight) || 0
-    });
-    return true;
-  } catch {
-    return false;
-  }
-};
 
     try {
       await API.post("/health", {
@@ -382,6 +363,7 @@ const createRecordIfNeeded = async (payload) => {
         }
 
         await fetchRecords();
+        setTimeout(fetchRecords, 800);
         window.dispatchEvent(new Event("storage"));
         alert(`导入成功，共 ${successCount} 条`);
       } catch {
