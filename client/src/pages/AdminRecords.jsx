@@ -237,43 +237,48 @@ export default function AdminRecords() {
     return result.map((item) => item.replace(/^"|"$/g, "").trim());
   };
 
+
   const createUserIfNeeded = async (email, username) => {
-    const clean = cleanEmail(email);
-    if (!clean || String(clean).toLowerCase() === "test@admin.com") return;
+  const clean = cleanEmail(email);
+  if (!clean || String(clean).toLowerCase() === "test@admin.com") return;
 
-    try {
-      await API.post("/users", {
-        email: clean,
-        username: username || clean.split("@")[0],
-        password: "123456",
-        role: "user"
-      });
-    } catch {}
-  };
+  try {
+    await API.post("/users", {
+      email: clean,
+      username: username || clean.split("@")[0],
+      password: "123456",
+      role: "user"
+    });
+  } catch {}
+};
 
-  const createRecordIfNeeded = async (payload) => {
-    const email = cleanEmail(payload.user);
-    const date = formatDateText(payload.date);
+const createRecordIfNeeded = async (payload) => {
+  const email = cleanEmail(payload.user);
+  const date = formatDateText(payload.date);
 
-    if (!email || !date) return false;
+  if (!email || !date) {
+    console.log("❌ 空数据跳过", payload);
+    return false;
+  }
 
+  try {
+    const res = await API.post("/health", {
+      user: email,
+      date,
+      steps: Number(payload.steps) || 0,
+      sleep: Number(payload.sleep) || 0,
+      water: Number(payload.water) || 0,
+      weight: Number(payload.weight) || 0
+    });
 
+    console.log("✅ 写入成功", res.data);
+    return true;
 
-    try {
-      await API.post("/health", {
-        user: email,
-        date,
-        steps: Number(payload.steps) || 0,
-        sleep: Number(payload.sleep) || 0,
-        water: Number(payload.water) || 0,
-        weight: Number(payload.weight) || 0
-      });
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
+  } catch (err) {
+    console.log("❌ 写入失败！！！", err.response?.status, err.response?.data || err.message);
+    return false;
+  }
+};
   const handleImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -347,7 +352,7 @@ export default function AdminRecords() {
           if (!email) continue;
 
           await createUserIfNeeded(email, username);
-
+await new Promise(r => setTimeout(r, 200));
           const added = await createRecordIfNeeded({
             user: email,
             date: formatDateText(date),
@@ -450,15 +455,7 @@ export default function AdminRecords() {
               >
                 健康记录管理
               </h2>
-              <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 14,
-                  color: "#64748b"
-                }}
-              >
-                数据导入后即时刷新显示，支持按用户与日期快速检索
-              </div>
+             
             </div>
 
             <div
