@@ -264,18 +264,34 @@ app.post("/api/admin/import-records", async (req, res) => {
     }
 
     const file = req.files.file;
-
     const workbook = XLSX.read(file.data, { type: "buffer" });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(sheet);
+    const data = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
     let count = 0;
 
-    for (let row of data) {
+    for (const row of data) {
       const email = clean(row["邮箱"] || row.email);
-      if (!email) continue;
+      const username =
+        clean(row["用户名"] || row.username) || (email ? email.split("@")[0] : "");
+      const dateRaw = String(row["日期"] || row.date || "").trim();
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(dateRaw)
+        ? dateRaw
+        : new Date().toISOString().slice(0, 10);
 
-      const date = row["日期"] || new Date().toISOString().slice(0, 10);
+      if (!email) {
+        continue;
+      }
+
+      const existUser = await User.findOne({ email });
+      if (!existUser) {
+        await User.create({
+          email,
+          username,
+          password: await bcrypt.hash("123456", 10),
+          role: "user"
+        });
+      }
 
       await Health.create({
         user: email,
@@ -289,9 +305,10 @@ app.post("/api/admin/import-records", async (req, res) => {
       count++;
     }
 
-    res.json({ message: `导入成功 ${count} 条` });
-  } catch {
-    res.json({ message: "导入失败" });
+    return res.json({ message: `导入成功 ${count} 条` });
+  } catch (err) {
+    console.log("import-records error:", err);
+    return res.json({ message: "导入失败" });
   }
 });
 app.use(express.static(path.join(__dirname, "../client/dist")));
