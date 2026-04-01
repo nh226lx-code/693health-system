@@ -274,6 +274,7 @@ export default function AdminRecords() {
     const reader = new FileReader();
 
     reader.onload = async (event) => {
+      console.log("文件读取成功");
       try {
         const text = String(event.target?.result || "")
           .replace(/^\ufeff/, "")
@@ -368,7 +369,7 @@ export default function AdminRecords() {
       e.target.value = "";
     };
 
-    reader.readAsText(file);
+    reader.readAsText(file, "UTF-8");
   };
 
   const toolbarButtonStyle = {
