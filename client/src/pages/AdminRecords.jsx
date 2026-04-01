@@ -188,7 +188,6 @@ const t2 = new Date(b.date).getTime();
       )
       .join("\n");
 
-    // ✅ 这里修复了逗号！！！
     const blob = new Blob(["\ufeff", csvContent], {
       type: "text/csv;charset=utf-8;"
     });
@@ -267,28 +266,42 @@ const t2 = new Date(b.date).getTime();
     }
   };
 
-const handleImport = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const formData = new FormData();
-  formData.append("file", file);
-
-try {
-  const res = await API.post("/admin/import-records", formData, {
-    headers: { "Content-Type": "multipart/form-data" }
-  });
-
-  alert(res.data.message || "导入成功");
-
-  await fetchRecords();
-  window.dispatchEvent(new Event("storage"));
-} catch {
-  alert("导入失败");
-}
-
-  e.target.value = "";
-};
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target.result;
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        let success = 0;
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          const cells = parseCSVLine(line);
+          const date = formatDateText(cells[0]);
+          const email = cleanEmail(cells[1]);
+          if (!date || !email) continue;
+          await createUserIfNeeded(email, email.split("@")[0]);
+          const ok = await createRecordIfNeeded({
+            user: email,
+            date,
+            steps: cells[2],
+            sleep: cells[3],
+            water: cells[4],
+            weight: cells[5]
+          });
+          if (ok) success++;
+        }
+        alert(`导入成功 ${success} 条`);
+        fetchRecords();
+        window.dispatchEvent(new Event("storage"));
+      } catch (err) {
+        alert("导入失败");
+      }
+    };
+    reader.readAsText(file);
+  };
 
   const toolbarButtonStyle = {
     height: 44,
@@ -417,7 +430,7 @@ try {
               <input
                 id="import-file"
                 type="file"
-                accept=".xlsx,.csv"
+                accept=".csv"
                 onChange={handleImport}
                 style={{ display: "none" }}
               />
