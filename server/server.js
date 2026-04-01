@@ -274,15 +274,20 @@ app.post("/api/admin/import-records", async (req, res) => {
 
     for (const row of data) {
       const email = clean(row["邮箱"] || row.email);
+      if (!email) continue;
+
       const username =
-        clean(row["用户名"] || row.username) || (email ? email.split("@")[0] : "");
+        clean(row["用户名"] || row.username) || email.split("@")[0];
 
       const rawDate = String(row["日期"] || row.date || "").trim();
       const date = /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
         ? rawDate
         : new Date().toISOString().slice(0, 10);
 
-      if (!email) continue;
+      const steps = Number(row["步数"] || row.steps || 0);
+      const sleep = Number(row["睡眠"] || row.sleep || 0);
+      const water = Number(row["饮水"] || row.water || 0);
+      const weight = Number(row["体重"] || row.weight || 0);
 
       const existUser = await User.findOne({ email });
       if (!existUser) {
@@ -298,20 +303,20 @@ app.post("/api/admin/import-records", async (req, res) => {
       const existRecord = await Health.findOne({ user: email, date });
 
       if (existRecord) {
-        existRecord.steps = Number(row["步数"] || 0);
-        existRecord.sleep = Number(row["睡眠"] || 0);
-        existRecord.water = Number(row["饮水"] || 0);
-        existRecord.weight = Number(row["体重"] || 0);
+        existRecord.steps = steps;
+        existRecord.sleep = sleep;
+        existRecord.water = water;
+        existRecord.weight = weight;
         await existRecord.save();
         updatedRecords++;
       } else {
         await Health.create({
           user: email,
           date,
-          steps: Number(row["步数"] || 0),
-          sleep: Number(row["睡眠"] || 0),
-          water: Number(row["饮水"] || 0),
-          weight: Number(row["体重"] || 0)
+          steps,
+          sleep,
+          water,
+          weight
         });
         addedRecords++;
       }

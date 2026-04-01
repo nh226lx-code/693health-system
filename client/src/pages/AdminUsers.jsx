@@ -62,10 +62,24 @@ export default function AdminUsers() {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
+  const loadUsers = async () => {
     setUsers([]);
+    await fetchUsers();
+  };
+
+  loadUsers();
+
+  const handleRefresh = () => {
     fetchUsers();
-  }, []);
+  };
+
+  window.addEventListener("storage", handleRefresh);
+
+  return () => {
+    window.removeEventListener("storage", handleRefresh);
+  };
+}, []);
 
   const handleDelete = async (id) => {
     const ok = window.confirm("确定删除该用户？");
