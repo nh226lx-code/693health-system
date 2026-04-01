@@ -130,11 +130,13 @@ export default function AdminRecords() {
         const t1 = new Date(a.date || "1970-01-01").getTime();
         const t2 = new Date(b.date || "1970-01-01").getTime();
 
-        if (t1 !== t2) {
-          return sortOrder === "asc" ? t1 - t2 : t2 - t1;
-        }
+if (t1 !== t2) {
+  return sortOrder === "asc" ? t1 - t2 : t2 - t1;
+}
 
-        return String(a.email || "").localeCompare(String(b.email || ""));
+return sortOrder === "asc"
+  ? new Date(a._id).getTime() - new Date(b._id).getTime()
+  : new Date(b._id).getTime() - new Date(a._id).getTime();
       }
 
       if (["steps", "sleep", "water", "weight"].includes(sortField)) {
@@ -171,7 +173,7 @@ export default function AdminRecords() {
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
-
+console.log(sortedRecords);
   const pagedRecords = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return sortedRecords.slice(start, start + pageSize);
@@ -365,7 +367,8 @@ await new Promise(r => setTimeout(r, 200));
          successCount++;
         }
 
-        await fetchRecords();
+        setCurrentPage(1);
+await fetchRecords();
         setTimeout(fetchRecords, 800);
         window.dispatchEvent(new Event("storage"));
         alert(`导入成功，共 ${successCount} 条`);
