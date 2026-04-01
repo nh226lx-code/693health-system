@@ -218,9 +218,6 @@ app.get("/api/health", async (req, res) => {
   try {
     const data = await Health.find().sort({ date: -1 });
     res.json(data);
-      (r) => r.user && !r.user.includes("PK") && !/[^\x20-\x7E]/.test(r.user)
-    );
-    res.json(cleanData);
   } catch {
     res.json([]);
   }
