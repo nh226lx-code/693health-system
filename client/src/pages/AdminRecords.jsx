@@ -113,10 +113,8 @@ export default function AdminRecords() {
       const email = String(item.email || "").toLowerCase();
       const userId = String(item.username || "").toLowerCase();
 
-      if (!email) return false;
-      if (email === "test@admin.com") {
-        return false;
-      }
+      if (!email) return true;
+    
 
       if (!kw) return true;
 
