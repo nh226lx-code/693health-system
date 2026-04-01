@@ -158,12 +158,18 @@ app.post("/api/admin/import-users", async (req, res) => {
       const content = file.data.toString("utf8");
       const lines = content.split("\n");
 
-      for (let i = 1; i < lines.length; i++) {
-        let line = lines[i].trim();
-        if (!line) continue;
-        const cols = line.split(",");
-        data.push({ email: cols[1] });
-      }
+for (let i = 1; i < lines.length; i++) {
+  let line = lines[i].trim();
+  if (!line) continue;
+
+  const cols = line.split(",");
+
+  const email = clean(cols[0]);
+
+  if (!email) continue;
+
+  data.push({ email });
+}
     } else {
       const workbook = XLSX.read(file.data, { type: "buffer" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
