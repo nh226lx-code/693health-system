@@ -320,7 +320,7 @@ export default function AdminRecords() {
             water = cols[6] || 0;
             weight = cols[7] || 0;
           } else {
-            email = cleanEmail(cols[0] || "");
+            email = cleanEmail(cols[3] || cols[2] || cols[1] || cols[0] || "");
 
             if (String(cols[2] || "").trim().match(/^\d{4}-\d{2}-\d{2}$/)) {
               username = String(cols[1] || "").trim();
@@ -339,7 +339,10 @@ export default function AdminRecords() {
             }
           }
 
-          if (!email) continue;
+          if (!email) {
+  console.log("这一行没有识别到邮箱：", cols);
+  continue;
+}
 
           await createUserIfNeeded(email, username);
 
