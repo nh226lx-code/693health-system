@@ -176,26 +176,30 @@ for (let i = 1; i < lines.length; i++) {
       data = XLSX.utils.sheet_to_json(sheet);
     }
 
-    let count = 0;
+let count = 0;
 
-    for (let row of data) {
-      const email = clean(row.email);
-      if (!email) continue;
+for (let row of data) {
+  const email = clean(row.email);
 
-      const exist = await User.findOne({ email });
-      if (exist) continue;
+  if (!email) continue;
 
+  try {
+    const exist = await User.findOne({ email });
+
+    if (!exist) {
       await User.create({
         email,
         username: email.split("@")[0],
         password: await bcrypt.hash("123456", 10),
         role: "user"
       });
-
-      count++;
     }
 
-    res.json({ message: `导入成功 ${count} 条` });
+    count++;
+  } catch {}
+}
+
+res.json({ message: `导入成功 ${count} 条` });
   } catch {
     res.json({ message: "导入失败" });
   }
