@@ -217,7 +217,7 @@ app.delete("/api/users/:id", async (req, res) => {
 app.get("/api/health", async (req, res) => {
   try {
     const data = await Health.find().sort({ date: -1 });
-    const cleanData = data.filter(
+    res.json(data);
       (r) => r.user && !r.user.includes("PK") && !/[^\x20-\x7E]/.test(r.user)
     );
     res.json(cleanData);
@@ -245,8 +245,10 @@ app.post("/api/health", async (req, res) => {
       });
     }
 
-    await Health.create({
-      user: email,
+const safeEmail = clean(email);
+
+await Health.create({
+  user: safeEmail,
       date,
       steps: Number(req.body.steps) || 0,
       sleep: Number(req.body.sleep) || 0,
