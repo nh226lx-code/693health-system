@@ -257,15 +257,43 @@ await Health.create({
   }
 });
 
-app.delete("/api/health/:id", async (req, res) => {
+app.post("/api/admin/import-records", async (req, res) => {
   try {
-    await Health.findByIdAndDelete(req.params.id);
-    res.json({});
+    if (!req.files || !req.files.file) {
+      return res.json({ message: "没有文件" });
+    }
+
+    const file = req.files.file;
+
+    const workbook = XLSX.read(file.data, { type: "buffer" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(sheet);
+
+    let count = 0;
+
+    for (let row of data) {
+      const email = clean(row["邮箱"] || row.email);
+      if (!email) continue;
+
+      const date = row["日期"] || new Date().toISOString().slice(0, 10);
+
+      await Health.create({
+        user: email,
+        date,
+        steps: Number(row["步数"] || 0),
+        sleep: Number(row["睡眠"] || 0),
+        water: Number(row["饮水"] || 0),
+        weight: Number(row["体重"] || 0)
+      });
+
+      count++;
+    }
+
+    res.json({ message: `导入成功 ${count} 条` });
   } catch {
-    res.json({});
+    res.json({ message: "导入失败" });
   }
 });
-
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
 app.get("*", (req, res) => {

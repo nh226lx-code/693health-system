@@ -29,8 +29,8 @@ export default function AdminRecords() {
     if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
     const date = new Date(text);
     if (Number.isNaN(date.getTime())) return text;
-    return date.toISOString().slice(0, 10);
-  };
+     return new Date().toISOString().slice(0, 10); 
+  }
 
   const fetchRecords = async () => {
     try {
@@ -123,8 +123,8 @@ export default function AdminRecords() {
 
   list.sort((a, b) => {
     if (sortField === "date") {
-      const t1 = new Date(a._id).getTime();
-      const t2 = new Date(b._id).getTime();
+    const t1 = new Date(a.date).getTime();
+const t2 = new Date(b.date).getTime();
       return sortOrder === "asc" ? t1 - t2 : t2 - t1;
     }
 
@@ -266,114 +266,27 @@ export default function AdminRecords() {
     }
   };
 
-  const handleImport = (e) => {
-  console.log("导入触发了");
+const handleImport = async (e) => {
   const file = e.target.files[0];
-    if (!file) return;
+  if (!file) return;
 
-    const reader = new FileReader();
+  const formData = new FormData();
+  formData.append("file", file);
 
-    reader.onload = async (event) => {
-      console.log("文件读取成功");
-      try {
-        const text = String(event.target?.result || "")
-          .replace(/^\ufeff/, "")
-          .replace(/�/g, "");
+  try {
+    const res = await API.post("/admin/import-records", formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
 
-        const rows = text
-          .split(/\r?\n/)
-          .map((row) => row.trim())
-          .filter(Boolean);
+    alert(res.data.message || "导入成功");
 
-        if (rows.length <= 1) {
-          alert("导入失败，请检查CSV格式");
-          e.target.value = "";
-          return;
-        }
+    await fetchRecords();
+  } catch {
+    alert("导入失败");
+  }
 
-        const header = parseCSVLine(rows[0]).map((item) => item.toLowerCase());
-        const isExportTemplate =
-          header.includes("序号") &&
-          header.includes("日期") &&
-          header.includes("邮箱");
-
-        let successCount = 0;
-
-        for (let i = 1; i < rows.length; i++) {
-          const cols = parseCSVLine(rows[i]);
-          if (!cols.length) continue;
-
-          let email = "";
-          let username = "";
-          let date = "";
-          let steps = 0;
-          let sleep = 0;
-          let water = 0;
-          let weight = 0;
-
-          if (isExportTemplate) {
-            email = cleanEmail(cols[3] || "");
-            username = String(cols[2] || "").trim();
-            date = String(cols[1] || "").trim();
-            steps = cols[4] || 0;
-            sleep = cols[5] || 0;
-            water = cols[6] || 0;
-            weight = cols[7] || 0;
-          } else {
-            email = cleanEmail(cols[3] || cols[2] || cols[1] || cols[0] || "");
-
-            if (String(cols[2] || "").trim().match(/^\d{4}-\d{2}-\d{2}$/)) {
-              username = String(cols[1] || "").trim();
-              date = String(cols[2] || "").trim();
-              steps = cols[3] || 0;
-              sleep = cols[4] || 0;
-              water = cols[5] || 0;
-              weight = cols[6] || 0;
-            } else {
-              username = email ? email.split("@")[0] : "";
-              date = String(cols[1] || "").trim();
-              steps = cols[2] || 0;
-              sleep = cols[3] || 0;
-              water = cols[4] || 0;
-              weight = cols[5] || 0;
-            }
-          }
-
-          if (!email) {
-  console.log("这一行没有识别到邮箱：", cols);
-  continue;
-}
-
-          await createUserIfNeeded(email, username);
-
-          const added = await createRecordIfNeeded({
-            user: email,
-            date: new Date().toISOString(),
-            steps: Number(steps) || 0,
-            sleep: Number(sleep) || 0,
-            water: Number(water) || 0,
-            weight: Number(weight) || 0
-          });
-
-          if (added) successCount++;
-        }
-
-        setCurrentPage(1);
-        await fetchRecords();
-        setTimeout(() => {
-          fetchRecords();
-        }, 1500);
-        window.dispatchEvent(new Event("storage"));
-        alert(`导入成功，共 ${successCount} 条`);
-      } catch {
-        alert("导入失败，请检查CSV格式");
-      }
-
-      e.target.value = "";
-    };
-
-    reader.readAsText(file, "UTF-8");
-  };
+  e.target.value = "";
+};
 
   const toolbarButtonStyle = {
     height: 44,
@@ -502,7 +415,7 @@ export default function AdminRecords() {
               <input
                 id="import-file"
                 type="file"
-                accept=".csv"
+                accept=".xlsx,.csv"
                 onChange={handleImport}
                 style={{ display: "none" }}
               />
