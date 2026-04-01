@@ -259,17 +259,26 @@ export default function AdminRecords() {
 
     if (!email || !date) return false;
 
-    const exists = records.some(
-      (item) =>
-        cleanEmail(item.email) === email &&
-        formatDateText(item.date) === date &&
-        Number(item.steps) === (Number(payload.steps) || 0) &&
-        Number(item.sleep) === (Number(payload.sleep) || 0) &&
-        Number(item.water) === (Number(payload.water) || 0) &&
-        Number(item.weight) === (Number(payload.weight) || 0)
-    );
+const createRecordIfNeeded = async (payload) => {
+  const email = cleanEmail(payload.user);
+  const date = formatDateText(payload.date);
 
-    if (exists) return false;
+  if (!email || !date) return false;
+
+  try {
+    await API.post("/health", {
+      user: email,
+      date,
+      steps: Number(payload.steps) || 0,
+      sleep: Number(payload.sleep) || 0,
+      water: Number(payload.water) || 0,
+      weight: Number(payload.weight) || 0
+    });
+    return true;
+  } catch {
+    return false;
+  }
+};
 
     try {
       await API.post("/health", {
