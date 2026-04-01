@@ -164,7 +164,7 @@ for (let i = 1; i < lines.length; i++) {
 
   const cols = line.split(",");
 
-  const email = clean(cols[0]);
+  const email = clean(cols[1]);
 
   if (!email) continue;
 
