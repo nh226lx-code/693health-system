@@ -188,7 +188,8 @@ const t2 = new Date(b.date).getTime();
       )
       .join("\n");
 
-    const blob = new Blob(["\ufeff" csvContent], {
+    // ✅ 这里修复了逗号！！！
+    const blob = new Blob(["\ufeff", csvContent], {
       type: "text/csv;charset=utf-8;"
     });
 

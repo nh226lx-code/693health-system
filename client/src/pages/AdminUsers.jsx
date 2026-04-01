@@ -185,7 +185,7 @@ useEffect(() => {
       )
       .join("\n");
 
-    const blob = new Blob(["\ufeff",csvContent], {
+    const blob = new Blob(["\ufeff", csvContent], {
       type: "text/csv;charset=utf-8;"
     });
     const url = window.URL.createObjectURL(blob);
@@ -202,50 +202,22 @@ useEffect(() => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const text = String(event.target?.result || "")
-          .replace(/^\ufeff/, "")
-          .replace(/�/g, "");
+    const formData = new FormData();
+    formData.append("file", file);
 
-        const rows = text
-          .split(/\r?\n/)
-          .map((row) => row.trim())
-          .filter(Boolean);
+    API.post("/admin/import-users", formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+    })
+    .then(res => {
+      alert(res.data.message || "导入成功");
+      fetchUsers();
+      window.dispatchEvent(new Event("storage"));
+    })
+    .catch(() => {
+      alert("导入失败");
+    });
 
-        if (rows.length <= 1) {
-          alert("导入失败，请检查CSV格式");
-          e.target.value = "";
-          return;
-        }
-
-        let successCount = 0;
-        for (let i = 1; i < rows.length; i++) {
-          const cols = rows[i].split(",");
-          const email = safeEmail(cols[0] || "");
-          const username = String(cols[1] || "").trim();
-
-          if (!email) continue;
-
-          await API.post("/users", {
-            email,
-            username: username || email.split("@")[0],
-            password: "123456",
-            role: "user"
-          }).catch(() => {});
-
-          successCount++;
-        }
-
-        await fetchUsers();
-        alert(`导入成功，共 ${successCount} 条`);
-      } catch {
-        alert("导入失败，请检查CSV格式");
-      }
-      e.target.value = "";
-    };
-    reader.readAsText(file);
+    e.target.value = "";
   };
 
   const btnBase = {
@@ -315,7 +287,7 @@ useEffect(() => {
             <input
               id="import-user"
               type="file"
-              accept=".csv"
+              accept=".csv,.xlsx"
               onChange={handleImportUsers}
               style={{ display: "none" }}
             />
