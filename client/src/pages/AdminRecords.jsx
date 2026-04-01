@@ -273,17 +273,18 @@ const handleImport = async (e) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  try {
-    const res = await API.post("/admin/import-records", formData, {
-      headers: { "Content-Type": "multipart/form-data" }
-    });
+try {
+  const res = await API.post("/admin/import-records", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });
 
-    alert(res.data.message || "导入成功");
+  alert(res.data.message || "导入成功");
 
-    await fetchRecords();
-  } catch {
-    alert("导入失败");
-  }
+  await fetchRecords();
+  window.dispatchEvent(new Event("storage"));
+} catch {
+  alert("导入失败");
+}
 
   e.target.value = "";
 };

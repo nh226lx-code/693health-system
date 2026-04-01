@@ -268,20 +268,21 @@ app.post("/api/admin/import-records", async (req, res) => {
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const data = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-    let count = 0;
+    let addedUsers = 0;
+    let addedRecords = 0;
+    let updatedRecords = 0;
 
     for (const row of data) {
       const email = clean(row["邮箱"] || row.email);
       const username =
         clean(row["用户名"] || row.username) || (email ? email.split("@")[0] : "");
-      const dateRaw = String(row["日期"] || row.date || "").trim();
-      const date = /^\d{4}-\d{2}-\d{2}$/.test(dateRaw)
-        ? dateRaw
+
+      const rawDate = String(row["日期"] || row.date || "").trim();
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
+        ? rawDate
         : new Date().toISOString().slice(0, 10);
 
-      if (!email) {
-        continue;
-      }
+      if (!email) continue;
 
       const existUser = await User.findOne({ email });
       if (!existUser) {
@@ -291,21 +292,34 @@ app.post("/api/admin/import-records", async (req, res) => {
           password: await bcrypt.hash("123456", 10),
           role: "user"
         });
+        addedUsers++;
       }
 
-      await Health.create({
-        user: email,
-        date,
-        steps: Number(row["步数"] || 0),
-        sleep: Number(row["睡眠"] || 0),
-        water: Number(row["饮水"] || 0),
-        weight: Number(row["体重"] || 0)
-      });
+      const existRecord = await Health.findOne({ user: email, date });
 
-      count++;
+      if (existRecord) {
+        existRecord.steps = Number(row["步数"] || 0);
+        existRecord.sleep = Number(row["睡眠"] || 0);
+        existRecord.water = Number(row["饮水"] || 0);
+        existRecord.weight = Number(row["体重"] || 0);
+        await existRecord.save();
+        updatedRecords++;
+      } else {
+        await Health.create({
+          user: email,
+          date,
+          steps: Number(row["步数"] || 0),
+          sleep: Number(row["睡眠"] || 0),
+          water: Number(row["饮水"] || 0),
+          weight: Number(row["体重"] || 0)
+        });
+        addedRecords++;
+      }
     }
 
-    return res.json({ message: `导入成功 ${count} 条` });
+    return res.json({
+      message: `新增用户 ${addedUsers} 人，新增报告 ${addedRecords} 条，更新报告 ${updatedRecords} 条`
+    });
   } catch (err) {
     console.log("import-records error:", err);
     return res.json({ message: "导入失败" });
