@@ -74,13 +74,15 @@ const fixData = async () => {
       await r.save();
     }
   }
+
+  console.log("数据清洗完成");
 };
 
 mongoose.connection.once("open", async () => {
   await fixData();
 });
 
-app.post("/auth/login", async (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   try {
     const email = clean(req.body.email);
     const password = req.body.password;
@@ -89,6 +91,7 @@ app.post("/auth/login", async (req, res) => {
     if (!user) return res.status(400).json({});
 
     let ok = false;
+
     if (user.password && user.password.startsWith("$2")) {
       ok = await bcrypt.compare(password, user.password);
     } else {
@@ -96,6 +99,7 @@ app.post("/auth/login", async (req, res) => {
     }
 
     if (!ok) return res.status(400).json({});
+
     const role = user.role === "admin" ? "admin" : "user";
 
     res.json({
@@ -108,7 +112,7 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
-app.get("/users", async (req, res) => {
+app.get("/api/users", async (req, res) => {
   try {
     const users = await User.find().select("-password");
     const cleanUsers = users.filter(
@@ -120,7 +124,7 @@ app.get("/users", async (req, res) => {
   }
 });
 
-app.post("/users", async (req, res) => {
+app.post("/api/users", async (req, res) => {
   try {
     const email = clean(req.body.email);
     if (!email) return res.json({});
@@ -141,7 +145,7 @@ app.post("/users", async (req, res) => {
   }
 });
 
-app.post("/admin/import-users", async (req, res) => {
+app.post("/api/admin/import-users", async (req, res) => {
   try {
     if (!req.files || !req.files.file) {
       return res.json({ message: "没有文件" });
@@ -153,44 +157,54 @@ app.post("/admin/import-users", async (req, res) => {
     if (file.name.endsWith(".csv")) {
       const content = file.data.toString("utf8");
       const lines = content.split("\n");
-      for (let i = 1; i < lines.length; i++) {
-        let line = lines[i].trim();
-        if (!line) continue;
-        const cols = line.split(",");
-        const email = clean(cols[0]);
-        if (!email) continue;
-        data.push({ email });
-      }
+
+for (let i = 1; i < lines.length; i++) {
+  let line = lines[i].trim();
+  if (!line) continue;
+
+  const cols = line.split(",");
+
+  const email = clean(cols[1]);
+
+  if (!email) continue;
+
+  data.push({ email });
+}
     } else {
       const workbook = XLSX.read(file.data, { type: "buffer" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       data = XLSX.utils.sheet_to_json(sheet);
     }
 
-    let count = 0;
-    for (let row of data) {
-      const email = clean(row.email);
-      if (!email) continue;
+let count = 0;
 
-      const exist = await User.findOne({ email });
-      if (!exist) {
-        await User.create({
-          email,
-          username: email.split("@")[0],
-          password: await bcrypt.hash("123456", 10),
-          role: "user"
-        });
-      }
-      count++;
-    }
+for (let row of data) {
+  const email = clean(row.email);
 
-    res.json({ message: `导入成功 ${count} 条` });
+  if (!email) continue;
+
+  const exist = await User.findOne({ email });
+
+  if (!exist) {
+    await User.create({
+      email,
+      username: email.split("@")[0],
+      password: await bcrypt.hash("123456", 10),
+      role: "user"
+    });
+  }
+
+  count++;
+}
+
+
+res.json({ message: `导入成功 ${count} 条` });
   } catch {
     res.json({ message: "导入失败" });
   }
 });
 
-app.delete("/users/:id", async (req, res) => {
+app.delete("/api/users/:id", async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (user) await Health.deleteMany({ user: user.email });
@@ -200,7 +214,7 @@ app.delete("/users/:id", async (req, res) => {
   }
 });
 
-app.get("/health", async (req, res) => {
+app.get("/api/health", async (req, res) => {
   try {
     const data = await Health.find().sort({ date: -1 });
     res.json(data);
@@ -209,12 +223,12 @@ app.get("/health", async (req, res) => {
   }
 });
 
-app.post("/health", async (req, res) => {
+app.post("/api/health", async (req, res) => {
   try {
     const email = clean(req.body.user);
     if (!email) return res.json({});
 
-    const date = req.body.date || new Date().toISOString().slice(0, 10);
+const date = req.body.date || new Date().toISOString();
 
     const exist = await User.findOne({ email });
     if (!exist) {
@@ -226,8 +240,10 @@ app.post("/health", async (req, res) => {
       });
     }
 
-    await Health.create({
-      user: email,
+const safeEmail = clean(email);
+
+await Health.create({
+  user: safeEmail,
       date,
       steps: Number(req.body.steps) || 0,
       sleep: Number(req.body.sleep) || 0,
@@ -241,7 +257,7 @@ app.post("/health", async (req, res) => {
   }
 });
 
-app.post("/admin/import-records", async (req, res) => {
+app.post("/api/admin/import-records", async (req, res) => {
   try {
     if (!req.files || !req.files.file) {
       return res.json({ message: "没有文件" });
@@ -254,22 +270,18 @@ app.post("/admin/import-records", async (req, res) => {
 
     let addedUsers = 0;
     let addedRecords = 0;
-    let updatedRecords = 0;
 
     for (const row of data) {
       const email = clean(row["邮箱"] || row.email);
       if (!email) continue;
 
-      const username = clean(row["用户名"] || row.username) || email.split("@")[0];
-      const rawDate = String(row["日期"] || row.date || "").trim();
+      const username =
+        clean(row["用户名"] || row.username) || email.split("@")[0];
+
+      const rawDate = String(row["日期"] || "").trim();
       const date = /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
         ? rawDate
         : new Date().toISOString().slice(0, 10);
-
-      const steps = Number(row["步数"] || row.steps || 0);
-      const sleep = Number(row["睡眠"] || row.sleep || 0);
-      const water = Number(row["饮水"] || row.water || 0);
-      const weight = Number(row["体重"] || row.weight || 0);
 
       const existUser = await User.findOne({ email });
       if (!existUser) {
@@ -283,34 +295,27 @@ app.post("/admin/import-records", async (req, res) => {
       }
 
       const existRecord = await Health.findOne({ user: email, date });
-      if (existRecord) {
-        existRecord.steps = steps;
-        existRecord.sleep = sleep;
-        existRecord.water = water;
-        existRecord.weight = weight;
-        await existRecord.save();
-        updatedRecords++;
-      } else {
+      if (!existRecord) {
         await Health.create({
           user: email,
           date,
-          steps,
-          sleep,
-          water,
-          weight
+          steps: Number(row["步数"] || 0),
+          sleep: Number(row["睡眠"] || 0),
+          water: Number(row["饮水"] || 0),
+          weight: Number(row["体重"] || 0)
         });
         addedRecords++;
       }
     }
 
     return res.json({
-      message: `新增用户 ${addedUsers} 人，新增报告 ${addedRecords} 条，更新报告 ${updatedRecords} 条`
+      message: `新增用户 ${addedUsers} 人，新增报告 ${addedRecords} 条`
     });
-  } catch {
+  } catch (err) {
+    console.log("import-records error:", err);
     return res.json({ message: "导入失败" });
   }
 });
-
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
 app.get("*", (req, res) => {
