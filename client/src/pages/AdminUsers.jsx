@@ -31,7 +31,7 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      const res = await API.get("/api/users?_t=" + Date.now());
+      const res = await API.get("/users?_t=" + Date.now());
       if (!Array.isArray(res.data)) {
         setUsers([]);
         return;
@@ -57,30 +57,32 @@ export default function AdminUsers() {
     }
   };
 
-  useEffect(() => {
-    const loadUsers = async () => {
-      setUsers([]);
-      await fetchUsers();
-    };
-    loadUsers();
+useEffect(() => {
+  const loadUsers = async () => {
+    setUsers([]);
+    await fetchUsers();
+  };
 
-    const handleRefresh = () => {
-      fetchUsers();
-    };
-    window.addEventListener("storage", handleRefresh);
-    return () => {
-      window.removeEventListener("storage", handleRefresh);
-    };
-  }, []);
+  loadUsers();
+
+  const handleRefresh = () => {
+    fetchUsers();
+  };
+
+  window.addEventListener("storage", handleRefresh);
+
+  return () => {
+    window.removeEventListener("storage", handleRefresh);
+  };
+}, []);
 
   const handleDelete = async (id) => {
     const ok = window.confirm("确定删除该用户？");
     if (!ok) return;
 
     try {
-      await API.delete(`/api/users/${id}`);
+      await API.delete(`/users/${id}`);
       await fetchUsers();
-      window.dispatchEvent(new Event("storage"));
     } catch {
       alert("删除失败");
     }
@@ -183,7 +185,7 @@ export default function AdminUsers() {
       )
       .join("\n");
 
-    const blob = new Blob(["\ufeff" + csvContent], {
+    const blob = new Blob(["\ufeff" csvContent], {
       type: "text/csv;charset=utf-8;"
     });
     const url = window.URL.createObjectURL(blob);
@@ -192,6 +194,7 @@ export default function AdminUsers() {
     a.href = url;
     a.download = "users_data.csv";
     a.click();
+
     window.URL.revokeObjectURL(url);
   };
 
@@ -225,7 +228,7 @@ export default function AdminUsers() {
 
           if (!email) continue;
 
-          await API.post("/api/users", {
+          await API.post("/users", {
             email,
             username: username || email.split("@")[0],
             password: "123456",
@@ -236,7 +239,6 @@ export default function AdminUsers() {
         }
 
         await fetchUsers();
-        window.dispatchEvent(new Event("storage"));
         alert(`导入成功，共 ${successCount} 条`);
       } catch {
         alert("导入失败，请检查CSV格式");

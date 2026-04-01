@@ -29,13 +29,13 @@ export default function AdminRecords() {
     if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
     const date = new Date(text);
     if (Number.isNaN(date.getTime())) return text;
-    return date.toISOString().slice(0, 10);
+     return date.toISOString().slice(0, 10); 
   }
 
   const fetchRecords = async () => {
     try {
       setLoading(true);
-      const res = await API.get("/api/health?_t=" + Date.now());
+      const res = await API.get("/health?_t=" + Date.now());
 
       if (!Array.isArray(res.data)) {
         setRecords([]);
@@ -44,6 +44,7 @@ export default function AdminRecords() {
 
       const list = res.data.map((item) => {
         const email = cleanEmail(item.user || "");
+
         return {
           _id: item._id,
           user: email || "unknown",
@@ -68,14 +69,6 @@ export default function AdminRecords() {
   useEffect(() => {
     setRecords([]);
     fetchRecords();
-
-    const handleStorageRefresh = () => {
-      fetchRecords();
-    };
-    window.addEventListener("storage", handleStorageRefresh);
-    return () => {
-      window.removeEventListener("storage", handleStorageRefresh);
-    };
   }, []);
 
   const handleDelete = async (id) => {
@@ -83,7 +76,7 @@ export default function AdminRecords() {
     if (!ok) return;
 
     try {
-      await API.delete(`/api/health/${id}`);
+      await API.delete(`/health/${id}`);
       await fetchRecords();
       window.dispatchEvent(new Event("storage"));
     } catch {
@@ -96,7 +89,9 @@ export default function AdminRecords() {
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
       return;
     }
+
     setSortField(field);
+
     if (field === "date" || ["steps", "sleep", "water", "weight"].includes(field)) {
       setSortOrder("desc");
     } else {
@@ -113,40 +108,48 @@ export default function AdminRecords() {
 
   const filteredRecords = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
+
     return records.filter((item) => {
       const email = String(item.email || "").toLowerCase();
       const userId = String(item.username || "").toLowerCase();
+
       if (!kw) return true;
       return userId.includes(kw) || email.includes(kw);
     });
   }, [records, keyword]);
 
   const sortedRecords = useMemo(() => {
-    const list = [...filteredRecords];
-    list.sort((a, b) => {
-      if (sortField === "date") {
-        const t1 = new Date(a.date).getTime();
-        const t2 = new Date(b.date).getTime();
-        return sortOrder === "asc" ? t1 - t2 : t2 - t1;
+  const list = [...filteredRecords];
+
+  list.sort((a, b) => {
+    if (sortField === "date") {
+    const t1 = new Date(a.date).getTime();
+const t2 = new Date(b.date).getTime();
+      return sortOrder === "asc" ? t1 - t2 : t2 - t1;
+    }
+
+    if (["steps", "sleep", "water", "weight"].includes(sortField)) {
+      const n1 = Number(a[sortField]) || 0;
+      const n2 = Number(b[sortField]) || 0;
+
+      if (n1 !== n2) {
+        return sortOrder === "asc" ? n1 - n2 : n2 - n1;
       }
 
-      if (["steps", "sleep", "water", "weight"].includes(sortField)) {
-        const n1 = Number(a[sortField]) || 0;
-        const n2 = Number(b[sortField]) || 0;
-        if (n1 !== n2) {
-          return sortOrder === "asc" ? n1 - n2 : n2 - n1;
-        }
-        return String(a.email || "").localeCompare(String(b.email || ""));
-      }
+      return String(a.email || "").localeCompare(String(b.email || ""));
+    }
 
-      const v1 = String(a[sortField] || "").toLowerCase();
-      const v2 = String(b[sortField] || "").toLowerCase();
-      if (v1 < v2) return sortOrder === "asc" ? -1 : 1;
-      if (v1 > v2) return sortOrder === "asc" ? 1 : -1;
-      return 0;
-    });
-    return list;
-  }, [filteredRecords, sortField, sortOrder]);
+    const v1 = String(a[sortField] || "").toLowerCase();
+    const v2 = String(b[sortField] || "").toLowerCase();
+
+    if (v1 < v2) return sortOrder === "asc" ? -1 : 1;
+    if (v1 > v2) return sortOrder === "asc" ? 1 : -1;
+
+    return 0;
+  });
+
+  return list;
+}, [filteredRecords, sortField, sortOrder]);
 
   const totalPages = Math.max(1, Math.ceil(sortedRecords.length / pageSize));
 
@@ -167,6 +170,7 @@ export default function AdminRecords() {
 
   const exportCSV = () => {
     const headers = ["序号", "日期", "用户ID", "邮箱", "步数", "睡眠", "饮水", "体重"];
+
     const rows = sortedRecords.map((item, i) => [
       i + 1,
       item.date,
@@ -184,9 +188,10 @@ export default function AdminRecords() {
       )
       .join("\n");
 
-    const blob = new Blob(["\ufeff" + csvContent], {
+    const blob = new Blob(["\ufeff" csvContent], {
       type: "text/csv;charset=utf-8;"
     });
+
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -199,9 +204,11 @@ export default function AdminRecords() {
     const result = [];
     let current = "";
     let inQuotes = false;
+
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
       const next = line[i + 1];
+
       if (char === '"') {
         if (inQuotes && next === '"') {
           current += '"';
@@ -216,6 +223,7 @@ export default function AdminRecords() {
         current += char;
       }
     }
+
     result.push(current.trim());
     return result.map((item) => item.replace(/^"|"$/g, "").trim());
   };
@@ -223,8 +231,9 @@ export default function AdminRecords() {
   const createUserIfNeeded = async (email, username) => {
     const clean = cleanEmail(email);
     if (!clean || String(clean).toLowerCase() === "test@admin.com") return;
+
     try {
-      await API.post("/api/users", {
+      await API.post("/users", {
         email: clean,
         username: username || clean.split("@")[0],
         password: "123456",
@@ -236,11 +245,13 @@ export default function AdminRecords() {
   const createRecordIfNeeded = async (payload) => {
     const email = cleanEmail(payload.user);
     const date = formatDateText(payload.date);
+
     if (!email || !date) {
       return false;
     }
+
     try {
-      const res = await API.post("/api/health", {
+      const res = await API.post("/health", {
         user: email,
         date,
         steps: Number(payload.steps) || 0,
@@ -248,33 +259,35 @@ export default function AdminRecords() {
         water: Number(payload.water) || 0,
         weight: Number(payload.weight) || 0
       });
+
       return !!res.data;
     } catch {
       return false;
     }
   };
 
-  const handleImport = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+const handleImport = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const formData = new FormData();
-    formData.append("file", file);
+  const formData = new FormData();
+  formData.append("file", file);
 
-    try {
-      const res = await API.post("/api/admin/import-records", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-      alert(res.data.message || "导入成功");
-      await fetchRecords();
-      window.dispatchEvent(new Event("storage"));
-      window.location.reload();
-    } catch {
-      alert("导入失败");
-    }
+try {
+  const res = await API.post("/admin/import-records", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });
 
-    e.target.value = "";
-  };
+  alert(res.data.message || "导入成功");
+
+  await fetchRecords();
+  window.dispatchEvent(new Event("storage"));
+} catch {
+  alert("导入失败");
+}
+
+  e.target.value = "";
+};
 
   const toolbarButtonStyle = {
     height: 44,
