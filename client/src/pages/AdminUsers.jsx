@@ -365,11 +365,26 @@ export default function AdminUsers() {
               <tr style={{ background: "#f8fafc" }}>
                 <th style={{ padding: 16 }}>序号</th>
 
-                <th style={{ padding: 16 }}>日期</th>
+<th
+  style={{ padding: 16, cursor: "pointer" }}
+  onClick={() => handleSort("_id")}
+>
+  日期 {getSortIcon("_id")}
+</th>
 
-                <th style={{ padding: 16 }}>用户ID</th>
+<th
+  style={{ padding: 16, cursor: "pointer" }}
+  onClick={() => handleSort("username")}
+>
+  用户ID {getSortIcon("username")}
+</th>
 
-                <th style={{ padding: 16 }}>邮箱</th>
+<th
+  style={{ padding: 16, cursor: "pointer" }}
+  onClick={() => handleSort("email")}
+>
+  邮箱 {getSortIcon("email")}
+</th>
 
                 <th style={{ padding: 16 }}>角色</th>
 
