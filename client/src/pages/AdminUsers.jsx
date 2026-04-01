@@ -5,12 +5,9 @@ import Topbar from "../components/Topbar.jsx";
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [keyword, setKeyword] = useState("");
-
   const [sortField, setSortField] = useState("_id");
   const [sortOrder, setSortOrder] = useState("desc");
-
   const [currentPage, setCurrentPage] = useState(1);
-
   const pageSize = 20;
 
   const cleanEmail = (value) => {
@@ -34,8 +31,7 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      const res = await API.get("/users?_t=" + Date.now());
-
+      const res = await API.get("/api/users?_t=" + Date.now());
       if (!Array.isArray(res.data)) {
         setUsers([]);
         return;
@@ -44,7 +40,6 @@ export default function AdminUsers() {
       const list = res.data
         .map((u) => {
           const email = safeEmail(u.email || "");
-
           return {
             ...u,
             email,
@@ -62,32 +57,30 @@ export default function AdminUsers() {
     }
   };
 
-useEffect(() => {
-  const loadUsers = async () => {
-    setUsers([]);
-    await fetchUsers();
-  };
+  useEffect(() => {
+    const loadUsers = async () => {
+      setUsers([]);
+      await fetchUsers();
+    };
+    loadUsers();
 
-  loadUsers();
-
-  const handleRefresh = () => {
-    fetchUsers();
-  };
-
-  window.addEventListener("storage", handleRefresh);
-
-  return () => {
-    window.removeEventListener("storage", handleRefresh);
-  };
-}, []);
+    const handleRefresh = () => {
+      fetchUsers();
+    };
+    window.addEventListener("storage", handleRefresh);
+    return () => {
+      window.removeEventListener("storage", handleRefresh);
+    };
+  }, []);
 
   const handleDelete = async (id) => {
     const ok = window.confirm("确定删除该用户？");
     if (!ok) return;
 
     try {
-      await API.delete(`/users/${id}`);
+      await API.delete(`/api/users/${id}`);
       await fetchUsers();
+      window.dispatchEvent(new Event("storage"));
     } catch {
       alert("删除失败");
     }
@@ -115,7 +108,6 @@ useEffect(() => {
 
   const filteredUsers = useMemo(() => {
     const value = (keyword || "").toLowerCase();
-
     return users.filter((u) => {
       if (String(u.role || "").toLowerCase() === "admin") return false;
 
@@ -123,14 +115,12 @@ useEffect(() => {
       const username = String(u.username || "").toLowerCase();
 
       if (!email) return false;
-
       return email.includes(value) || username.includes(value);
     });
   }, [users, keyword]);
 
   const sortedUsers = useMemo(() => {
     const list = [...filteredUsers];
-
     list.sort((a, b) => {
       if (sortField === "_id") {
         const t1 = parseInt((a._id || "").substring(0, 8), 16) || 0;
@@ -152,7 +142,6 @@ useEffect(() => {
       if (v1 > v2) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
-
     return list;
   }, [filteredUsers, sortField, sortOrder]);
 
@@ -175,7 +164,6 @@ useEffect(() => {
 
   const exportCSV = () => {
     const headers = ["序号", "用户ID", "邮箱", "角色"];
-
     const rows = sortedUsers.map((user, i) => [
       i + 1,
       user.username || (user.email ? safeEmail(user.email).split("@")[0] : "unknown"),
@@ -204,7 +192,6 @@ useEffect(() => {
     a.href = url;
     a.download = "users_data.csv";
     a.click();
-
     window.URL.revokeObjectURL(url);
   };
 
@@ -213,7 +200,6 @@ useEffect(() => {
     if (!file) return;
 
     const reader = new FileReader();
-
     reader.onload = async (event) => {
       try {
         const text = String(event.target?.result || "")
@@ -232,16 +218,14 @@ useEffect(() => {
         }
 
         let successCount = 0;
-
         for (let i = 1; i < rows.length; i++) {
           const cols = rows[i].split(",");
-
           const email = safeEmail(cols[0] || "");
           const username = String(cols[1] || "").trim();
 
           if (!email) continue;
 
-          await API.post("/users", {
+          await API.post("/api/users", {
             email,
             username: username || email.split("@")[0],
             password: "123456",
@@ -252,14 +236,13 @@ useEffect(() => {
         }
 
         await fetchUsers();
+        window.dispatchEvent(new Event("storage"));
         alert(`导入成功，共 ${successCount} 条`);
       } catch {
         alert("导入失败，请检查CSV格式");
       }
-
       e.target.value = "";
     };
-
     reader.readAsText(file);
   };
 
@@ -378,30 +361,25 @@ useEffect(() => {
             <thead>
               <tr style={{ background: "#f8fafc" }}>
                 <th style={{ padding: 16 }}>序号</th>
-
-<th
-  style={{ padding: 16, cursor: "pointer" }}
-  onClick={() => handleSort("_id")}
->
-  日期 {getSortIcon("_id")}
-</th>
-
-<th
-  style={{ padding: 16, cursor: "pointer" }}
-  onClick={() => handleSort("username")}
->
-  用户ID {getSortIcon("username")}
-</th>
-
-<th
-  style={{ padding: 16, cursor: "pointer" }}
-  onClick={() => handleSort("email")}
->
-  邮箱 {getSortIcon("email")}
-</th>
-
+                <th
+                  style={{ padding: 16, cursor: "pointer" }}
+                  onClick={() => handleSort("_id")}
+                >
+                  日期 {getSortIcon("_id")}
+                </th>
+                <th
+                  style={{ padding: 16, cursor: "pointer" }}
+                  onClick={() => handleSort("username")}
+                >
+                  用户ID {getSortIcon("username")}
+                </th>
+                <th
+                  style={{ padding: 16, cursor: "pointer" }}
+                  onClick={() => handleSort("email")}
+                >
+                  邮箱 {getSortIcon("email")}
+                </th>
                 <th style={{ padding: 16 }}>角色</th>
-
                 <th style={{ padding: 16 }}>操作</th>
               </tr>
             </thead>
@@ -410,25 +388,19 @@ useEffect(() => {
               {pagedUsers.map((user, index) => {
                 const timestamp = parseInt((user._id || "").substring(0, 8), 16) * 1000;
                 const date = timestamp ? new Date(timestamp).toISOString().slice(0, 10) : "-";
-
                 return (
                   <tr key={user._id}>
                     <td style={{ padding: 16 }}>
                       {(currentPage - 1) * pageSize + index + 1}
                     </td>
-
                     <td style={{ padding: 16 }}>{date}</td>
-
                     <td style={{ padding: 16 }}>
                       {user.username}
                     </td>
-
                     <td style={{ padding: 16 }}>
                       {safeEmail(user.email)}
                     </td>
-
                     <td style={{ padding: 16 }}>{user.role}</td>
-
                     <td style={{ padding: 16 }}>
                       <button
                         onClick={() => handleDelete(user._id)}
