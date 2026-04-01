@@ -230,38 +230,7 @@ const handleImportUsers = async (e) => {
   e.target.value = "";
 };
 
-        let successCount = 0;
-
-        for (let i = 1; i < rows.length; i++) {
-          const cols = rows[i].split(",");
-
-          const email = safeEmail(cols[0] || "");
-          const username = String(cols[1] || "").trim();
-
-          if (!email) continue;
-
-          await API.post("/users", {
-            email,
-            username: username || email.split("@")[0],
-            password: "123456",
-            role: "user"
-          }).catch(() => {});
-
-          successCount++;
-        }
-
-        await fetchUsers();
-        alert(`导入成功，共 ${successCount} 条`);
-      } catch {
-        alert("导入失败，请检查CSV格式");
-      }
-
-      e.target.value = "";
-    };
-
-    reader.readAsText(file);
-  };
-
+ 
   const btnBase = {
     height: 42,
     padding: "0 18px",
