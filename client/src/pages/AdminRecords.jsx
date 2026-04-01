@@ -343,7 +343,7 @@ export default function AdminRecords() {
 
           const added = await createRecordIfNeeded({
             user: email,
-            date: formatDateText(date),
+            date: new Date().toISOString(),
             steps: Number(steps) || 0,
             sleep: Number(sleep) || 0,
             water: Number(water) || 0,
