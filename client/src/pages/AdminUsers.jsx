@@ -185,7 +185,7 @@ useEffect(() => {
       )
       .join("\n");
 
-    const blob = new Blob(["\ufeff" csvContent], {
+    const blob = new Blob(["\ufeff",csvContent], {
       type: "text/csv;charset=utf-8;"
     });
     const url = window.URL.createObjectURL(blob);
