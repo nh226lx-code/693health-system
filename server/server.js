@@ -228,9 +228,7 @@ app.post("/api/health", async (req, res) => {
     const email = clean(req.body.user);
     if (!email) return res.json({});
 
-    const date = new Date(
-      req.body.date || new Date()
-    ).toISOString().slice(0, 10);
+const date = req.body.date || new Date().toISOString();
 
     const exist = await User.findOne({ email });
     if (!exist) {
