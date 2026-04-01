@@ -10,7 +10,7 @@ export default function AdminRecords() {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  const pageSize = 20;
+  const pageSize = 1000;
 
   const cleanEmail = (value) => {
     if (!value) return "";
@@ -50,7 +50,7 @@ export default function AdminRecords() {
           user: email || "unknown",
           email,
           username: email ? email.split("@")[0] : "unknown",
-          date: formatDateText(item.date || ""),
+          date: item.date || "",
           steps: Number(item.steps) || 0,
           sleep: Number(item.sleep) || 0,
           water: Number(item.water) || 0,
@@ -119,44 +119,37 @@ export default function AdminRecords() {
   }, [records, keyword]);
 
   const sortedRecords = useMemo(() => {
-    const list = [...filteredRecords];
+  const list = [...filteredRecords];
 
-    list.sort((a, b) => {
-      if (sortField === "date") {
-        const t1 = new Date(a.date || "1970-01-01").getTime();
-        const t2 = new Date(b.date || "1970-01-01").getTime();
+  list.sort((a, b) => {
+    if (sortField === "date") {
+      const t1 = new Date(a._id).getTime();
+      const t2 = new Date(b._id).getTime();
+      return sortOrder === "asc" ? t1 - t2 : t2 - t1;
+    }
 
-        if (t1 !== t2) {
-          return sortOrder === "asc" ? t1 - t2 : t2 - t1;
-        }
+    if (["steps", "sleep", "water", "weight"].includes(sortField)) {
+      const n1 = Number(a[sortField]) || 0;
+      const n2 = Number(b[sortField]) || 0;
 
-        return sortOrder === "asc"
-          ? String(a.email || "").localeCompare(String(b.email || ""))
-          : String(b.email || "").localeCompare(String(a.email || ""));
+      if (n1 !== n2) {
+        return sortOrder === "asc" ? n1 - n2 : n2 - n1;
       }
 
-      if (["steps", "sleep", "water", "weight"].includes(sortField)) {
-        const n1 = Number(a[sortField]) || 0;
-        const n2 = Number(b[sortField]) || 0;
+      return String(a.email || "").localeCompare(String(b.email || ""));
+    }
 
-        if (n1 !== n2) {
-          return sortOrder === "asc" ? n1 - n2 : n2 - n1;
-        }
+    const v1 = String(a[sortField] || "").toLowerCase();
+    const v2 = String(b[sortField] || "").toLowerCase();
 
-        return String(a.email || "").localeCompare(String(b.email || ""));
-      }
+    if (v1 < v2) return sortOrder === "asc" ? -1 : 1;
+    if (v1 > v2) return sortOrder === "asc" ? 1 : -1;
 
-      const v1 = String(a[sortField] || "").toLowerCase();
-      const v2 = String(b[sortField] || "").toLowerCase();
+    return 0;
+  });
 
-      if (v1 < v2) return sortOrder === "asc" ? -1 : 1;
-      if (v1 > v2) return sortOrder === "asc" ? 1 : -1;
-
-      return 0;
-    });
-
-    return list;
-  }, [filteredRecords, sortField, sortOrder]);
+  return list;
+}, [filteredRecords, sortField, sortOrder]);
 
   const totalPages = Math.max(1, Math.ceil(sortedRecords.length / pageSize));
 
