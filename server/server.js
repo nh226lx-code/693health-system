@@ -164,7 +164,7 @@ for (let i = 1; i < lines.length; i++) {
 
   const cols = line.split(",");
 
-  const email = clean(cols[1]);
+  const email = clean(cols[0]);
 
   if (!email) continue;
 
@@ -179,6 +179,7 @@ for (let i = 1; i < lines.length; i++) {
 let count = 0;
 
 for (let row of data) {
+  const email = clean(row["邮箱"] || row.email);
   const username =
   clean(row["用户名"] || row.username) || email.split("@")[0];
 
@@ -187,12 +188,12 @@ for (let row of data) {
   const exist = await User.findOne({ email });
 
   if (!exist) {
-    await User.create({
-      email,
-      username: email.split("@")[0],
-      password: await bcrypt.hash("123456", 10),
-      role: "user"
-    });
+await User.create({
+  email,
+  username,
+  password: await bcrypt.hash("123456", 10),
+  role: "user"
+});
   }
 
   count++;
@@ -217,7 +218,18 @@ app.delete("/api/users/:id", async (req, res) => {
 
 app.get("/api/health", async (req, res) => {
   try {
-    const data = await Health.find().sort({ date: -1 });
+    const auth = req.headers.authorization || "";
+    const token = auth.replace("Bearer ", "");
+
+    if (token === "admin-token") {
+      const data = await Health.find().sort({ date: -1 });
+      return res.json(data);
+    }
+
+    const email = token.replace("-token", "");
+
+    const data = await Health.find({ user: email }).sort({ date: -1 });
+
     res.json(data);
   } catch {
     res.json([]);
