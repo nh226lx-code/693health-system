@@ -179,7 +179,8 @@ for (let i = 1; i < lines.length; i++) {
 let count = 0;
 
 for (let row of data) {
-  const email = clean(row.email);
+  const username =
+  clean(row["用户名"] || row.username) || email.split("@")[0];
 
   if (!email) continue;
 
