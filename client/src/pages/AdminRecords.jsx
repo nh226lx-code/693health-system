@@ -113,11 +113,7 @@ export default function AdminRecords() {
       const email = String(item.email || "").toLowerCase();
       const userId = String(item.username || "").toLowerCase();
 
-      if (!email) return true;
-    
-
       if (!kw) return true;
-
       return userId.includes(kw) || email.includes(kw);
     });
   }, [records, keyword]);
@@ -130,13 +126,13 @@ export default function AdminRecords() {
         const t1 = new Date(a.date || "1970-01-01").getTime();
         const t2 = new Date(b.date || "1970-01-01").getTime();
 
-if (t1 !== t2) {
-  return sortOrder === "asc" ? t1 - t2 : t2 - t1;
-}
+        if (t1 !== t2) {
+          return sortOrder === "asc" ? t1 - t2 : t2 - t1;
+        }
 
-return sortOrder === "asc"
-  ? new Date(a._id).getTime() - new Date(b._id).getTime()
-  : new Date(b._id).getTime() - new Date(a._id).getTime();
+        return sortOrder === "asc"
+          ? String(a.email || "").localeCompare(String(b.email || ""))
+          : String(b.email || "").localeCompare(String(a.email || ""));
       }
 
       if (["steps", "sleep", "water", "weight"].includes(sortField)) {
@@ -173,7 +169,7 @@ return sortOrder === "asc"
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
-console.log(sortedRecords);
+
   const pagedRecords = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return sortedRecords.slice(start, start + pageSize);
@@ -239,48 +235,44 @@ console.log(sortedRecords);
     return result.map((item) => item.replace(/^"|"$/g, "").trim());
   };
 
-
   const createUserIfNeeded = async (email, username) => {
-  const clean = cleanEmail(email);
-  if (!clean || String(clean).toLowerCase() === "test@admin.com") return;
+    const clean = cleanEmail(email);
+    if (!clean || String(clean).toLowerCase() === "test@admin.com") return;
 
-  try {
-    await API.post("/users", {
-      email: clean,
-      username: username || clean.split("@")[0],
-      password: "123456",
-      role: "user"
-    });
-  } catch {}
-};
+    try {
+      await API.post("/users", {
+        email: clean,
+        username: username || clean.split("@")[0],
+        password: "123456",
+        role: "user"
+      });
+    } catch {}
+  };
 
-const createRecordIfNeeded = async (payload) => {
-  const email = cleanEmail(payload.user);
-  const date = formatDateText(payload.date);
+  const createRecordIfNeeded = async (payload) => {
+    const email = cleanEmail(payload.user);
+    const date = formatDateText(payload.date);
 
-  if (!email || !date) {
-    console.log("❌ 空数据跳过", payload);
-    return false;
-  }
+    if (!email || !date) {
+      return false;
+    }
 
-  try {
-    const res = await API.post("/health", {
-      user: email,
-      date,
-      steps: Number(payload.steps) || 0,
-      sleep: Number(payload.sleep) || 0,
-      water: Number(payload.water) || 0,
-      weight: Number(payload.weight) || 0
-    });
+    try {
+      const res = await API.post("/health", {
+        user: email,
+        date,
+        steps: Number(payload.steps) || 0,
+        sleep: Number(payload.sleep) || 0,
+        water: Number(payload.water) || 0,
+        weight: Number(payload.weight) || 0
+      });
 
-    console.log("✅ 写入成功", res.data);
-    return true;
+      return !!res.data;
+    } catch {
+      return false;
+    }
+  };
 
-  } catch (err) {
-    console.log("❌ 写入失败！！！", err.response?.status, err.response?.data || err.message);
-    return false;
-  }
-};
   const handleImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -292,6 +284,7 @@ const createRecordIfNeeded = async (payload) => {
         const text = String(event.target?.result || "")
           .replace(/^\ufeff/, "")
           .replace(/�/g, "");
+
         const rows = text
           .split(/\r?\n/)
           .map((row) => row.trim())
@@ -354,7 +347,7 @@ const createRecordIfNeeded = async (payload) => {
           if (!email) continue;
 
           await createUserIfNeeded(email, username);
-await new Promise(r => setTimeout(r, 200));
+
           const added = await createRecordIfNeeded({
             user: email,
             date: formatDateText(date),
@@ -364,12 +357,14 @@ await new Promise(r => setTimeout(r, 200));
             weight: Number(weight) || 0
           });
 
-         successCount++;
+          if (added) successCount++;
         }
 
         setCurrentPage(1);
-await fetchRecords();
-        setTimeout(fetchRecords, 800);
+        await fetchRecords();
+        setTimeout(() => {
+          fetchRecords();
+        }, 1500);
         window.dispatchEvent(new Event("storage"));
         alert(`导入成功，共 ${successCount} 条`);
       } catch {
@@ -458,7 +453,6 @@ await fetchRecords();
               >
                 健康记录管理
               </h2>
-             
             </div>
 
             <div
