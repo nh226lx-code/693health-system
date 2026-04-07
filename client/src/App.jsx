@@ -6,7 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminRecords from "./pages/AdminRecords";
-import AdminRoutes from "./components/AdminRoutes";
+import AdminRoutes from "./components/AdminRoute";
 
 export default function App() {
   return (
