@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import API from "../services/api";
 import Topbar from "../components/Topbar.jsx";
+import * as XLSX from "xlsx";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -173,40 +174,21 @@ useEffect(() => {
     return sortedUsers.slice(start, start + pageSize);
   }, [sortedUsers, currentPage]);
 
-  const exportCSV = () => {
-    const headers = ["序号", "用户ID", "邮箱", "角色"];
+const exportExcel = () => {
+  const data = sortedUsers.map((user, i) => ({
+    序号: i + 1,
+    用户ID:
+      user.username ||
+      (user.email ? safeEmail(user.email).split("@")[0] : "unknown"),
+    邮箱: safeEmail(user.email || ""),
+    角色: user.role || ""
+  }));
 
-    const rows = sortedUsers.map((user, i) => [
-      i + 1,
-      user.username || (user.email ? safeEmail(user.email).split("@")[0] : "unknown"),
-      safeEmail(user.email || ""),
-      user.role || ""
-    ]);
-
-    const csvContent = [headers, ...rows]
-      .map((row) =>
-        row
-          .map((cell) => {
-            const value = cell ?? "";
-            const text = String(value).replace(/"/g, '""');
-            return `"${text}"`;
-          })
-          .join(",")
-      )
-      .join("\n");
-
-    const blob = new Blob(["\ufeff" + csvContent], {
-      type: "text/csv;charset=utf-8;"
-    });
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "users_data.csv";
-    a.click();
-
-    window.URL.revokeObjectURL(url);
-  };
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
+  XLSX.writeFile(workbook, "users.xlsx");
+};
 
 const handleImportUsers = async (e) => {
   const file = e.target.files[0];
@@ -298,7 +280,7 @@ const handleImportUsers = async (e) => {
             <input
               id="import-user"
               type="file"
-              accept=".xlsx,.csv"
+              accept=".xlsx"
               onChange={handleImportUsers}
               style={{ display: "none" }}
             />
@@ -316,7 +298,7 @@ const handleImportUsers = async (e) => {
             </label>
 
             <button
-              onClick={exportCSV}
+              onClick={exportExcel}
               style={{
                 ...btnBase,
                 background: "#16a34a",
