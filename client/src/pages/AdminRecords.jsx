@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import API from "../services/api";
 import Topbar from "../components/Topbar.jsx";
-
+import * as XLSX from "xlsx";
 export default function AdminRecords() {
   const [records, setRecords] = useState([]);
   const [keyword, setKeyword] = useState("");
@@ -168,37 +168,23 @@ const t2 = new Date(b.date).getTime();
     return sortedRecords.slice(start, start + pageSize);
   }, [sortedRecords, currentPage]);
 
-  const exportCSV = () => {
-    const headers = ["序号", "日期", "用户ID", "邮箱", "步数", "睡眠", "饮水", "体重"];
+const exportExcel = () => {
+  const data = sortedRecords.map((item, i) => ({
+    序号: i + 1,
+    日期: item.date,
+    用户ID: item.username || "unknown",
+    邮箱: item.email,
+    步数: item.steps,
+    睡眠: item.sleep,
+    饮水: item.water,
+    体重: item.weight
+  }));
 
-    const rows = sortedRecords.map((item, i) => [
-      i + 1,
-      item.date,
-      item.username || "unknown",
-      item.email,
-      item.steps,
-      item.sleep,
-      item.water,
-      item.weight
-    ]);
-
-    const csvContent = [headers, ...rows]
-      .map((row) =>
-        row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")
-      )
-      .join("\n");
-
-    const blob = new Blob(["\ufeff" + csvContent], {
-      type: "text/csv;charset=utf-8;"
-    });
-
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "health_records.csv";
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Records");
+  XLSX.writeFile(workbook, "health_records.xlsx");
+};
 
   const parseCSVLine = (line) => {
     const result = [];
@@ -435,7 +421,7 @@ try {
               </label>
 
               <button
-                onClick={exportCSV}
+                onClick={exportExcel}
                 style={{
                   ...toolbarButtonStyle,
                   background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",
