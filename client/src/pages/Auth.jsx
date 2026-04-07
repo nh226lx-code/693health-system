@@ -9,6 +9,8 @@ export default function Auth() {
     e.preventDefault();
 
     if (isLogin) {
+      localStorage.setItem("token", "demo-token"); 
+     localStorage.setItem("email", username); 
       alert(`登录成功（演示）\n用户名：${username}`);
     } else {
       alert(`注册成功（演示）\n用户名：${username}`);
