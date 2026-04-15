@@ -269,7 +269,14 @@ await Health.create({
     res.json({});
   }
 });
-
+app.delete("/api/health/:id", async (req, res) => {
+  try {
+    await Health.findByIdAndDelete(req.params.id);
+    res.json({ message: "删除成功" });
+  } catch (err) {
+    res.status(500).json({ message: "删除失败" });
+  }
+});
 app.post("/api/admin/import-records", async (req, res) => {
   try {
     if (!req.files || !req.files.file) {
