@@ -336,4 +336,6 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/dist/index.html"));
 });
 
-app.listen(process.env.PORT || 5000);
+app.listen(process.env.PORT || 5000, () => {
+  console.log("Server running on port 5000");
+});
