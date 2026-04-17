@@ -9,31 +9,43 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleRegister = async () => {
-    if (!username || !email || !password) {
-      alert("请填写完整信息");
-      return;
-    }
+const handleRegister = async () => {
+  if (!username || !email || !password) {
+    alert("请填写完整信息");
+    return;
+  }
 
-    try {
-      const res = await API.post("/users", {
-        username, // ✅ 修复：传用户名
+  try {
+    const res = await fetch("http://localhost:5000/api/users", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username,
         email,
         password,
         role: "user"
-      });
+      })
+    });
 
-      if (res.data.message === "exist") {
-        alert("用户已存在");
-        return;
-      }
+    const data = await res.json();
 
-      alert("注册成功，请登录");
+    if (data.message === "exist") {
+      alert("用户已存在");
+      return;
+    }
+
+    if (data && data._id) {
+      alert("注册成功");
       navigate("/login");
-    } catch {
+    } else {
       alert("注册失败");
     }
-  };
+  } catch (err) {
+    alert("注册失败");
+  }
+};
 
   return (
     <div

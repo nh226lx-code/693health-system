@@ -33,35 +33,21 @@ export default function AdminUsers() {
     return v;
   };
 
-  const fetchUsers = async () => {
-    try {
-      const res = await API.get("/users?_t=" + Date.now());
+const fetchUsers = async () => {
+  try {
+    const res = await API.get("/users");
 
-      if (!Array.isArray(res.data)) {
-        setUsers([]);
-        return;
-      }
-
-      const list = res.data
-        .map((u) => {
-          const email = safeEmail(u.email || "");
-
-          return {
-            ...u,
-            email,
-            username: u.username || (email ? email.split("@")[0] : "")
-          };
-        })
-        .filter((u) => {
-          const e = u.email || "";
-          return e && e.includes("@") && e.includes(".");
-        });
-
-      setUsers(list);
-    } catch {
+    if (!Array.isArray(res.data)) {
       setUsers([]);
+      return;
     }
-  };
+
+    const local = JSON.parse(localStorage.getItem("temp_users") || "[]");
+setUsers(res.data);
+  } catch (err) {
+    setUsers([]);
+  }
+};
 
 useEffect(() => {
   const loadUsers = async () => {
@@ -76,9 +62,10 @@ useEffect(() => {
   };
 
   window.addEventListener("storage", handleRefresh);
-
+  window.addEventListener("focus", handleRefresh);
   return () => {
     window.removeEventListener("storage", handleRefresh);
+     window.removeEventListener("focus", handleRefresh);
   };
 }, []);
 
@@ -118,12 +105,12 @@ useEffect(() => {
     const value = (keyword || "").toLowerCase();
 
     return users.filter((u) => {
-      if (String(u.role || "").toLowerCase() === "admin") return false;
+      if (u.role && String(u.role).toLowerCase() === "admin") return false;
 
       const email = safeEmail(u.email || "").toLowerCase();
       const username = String(u.username || "").toLowerCase();
 
-      if (!email) return false;
+      if (!email && !u.username) return false;
 
       return email.includes(value) || username.includes(value);
     });
