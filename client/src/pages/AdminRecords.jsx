@@ -58,9 +58,11 @@ export default function AdminRecords() {
         };
       });
 
-      const sorted = list.sort(
-  (a, b) => new Date(b.date) - new Date(a.date)
-);
+      const sorted = list.sort((a, b) => {
+  const id1 = String(a._id || "");
+  const id2 = String(b._id || "");
+  return id2.localeCompare(id1);
+});
 
 setRecords(sorted);
     } catch {
@@ -89,19 +91,26 @@ setRecords(sorted);
   };
 
   const handleSort = (field) => {
-    if (sortField === field) {
-      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-      return;
-    }
+  if (field === "date") {
+    setSortField(field);
+    setSortOrder("desc");
+    return;
+  }
 
+  if (sortField === field) {
+    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+  } else {
     setSortField(field);
 
-    if (field === "date" || ["steps", "sleep", "water", "weight"].includes(field)) {
+    if (["steps", "sleep", "water", "weight"].includes(field)) {
       setSortOrder("desc");
     } else {
       setSortOrder("asc");
     }
-  };
+  }
+};
+
+  
 
   const getSortIcon = (field) => {
     if (sortField === field) {
@@ -127,10 +136,12 @@ setRecords(sorted);
 
   list.sort((a, b) => {
     if (sortField === "date") {
-   const t1 = new Date(a.date || 0).getTime() || 0;
-const t2 = new Date(b.date || 0).getTime() || 0;
-      return sortOrder === "asc" ? t1 - t2 : t2 - t1;
-    }
+  const id1 = String(a._id || "");
+  const id2 = String(b._id || "");
+  return sortOrder === "asc"
+    ? id1.localeCompare(id2)
+    : id2.localeCompare(id1);
+}
 
     if (["steps", "sleep", "water", "weight"].includes(sortField)) {
       const n1 = Number(a[sortField]) || 0;
