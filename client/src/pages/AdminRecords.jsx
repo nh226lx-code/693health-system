@@ -50,7 +50,7 @@ export default function AdminRecords() {
           user: email || "unknown",
           email,
           username: email ? email.split("@")[0] : "unknown",
-          date: item.date || "",
+          date: formatDateText(item.date),
           steps: Number(item.steps) || 0,
           sleep: Number(item.sleep) || 0,
           water: Number(item.water) || 0,
@@ -58,7 +58,11 @@ export default function AdminRecords() {
         };
       });
 
-      setRecords(list);
+      const sorted = list.sort(
+  (a, b) => new Date(b.date) - new Date(a.date)
+);
+
+setRecords(sorted);
     } catch {
       setRecords([]);
     } finally {
@@ -123,8 +127,8 @@ export default function AdminRecords() {
 
   list.sort((a, b) => {
     if (sortField === "date") {
-    const t1 = new Date(a.date).getTime();
-const t2 = new Date(b.date).getTime();
+   const t1 = new Date(a.date || 0).getTime() || 0;
+const t2 = new Date(b.date || 0).getTime() || 0;
       return sortOrder === "asc" ? t1 - t2 : t2 - t1;
     }
 
@@ -267,6 +271,9 @@ try {
   alert(res.data.message || "导入成功");
 
   await fetchRecords();
+
+setSortField("date");
+setSortOrder("desc");
   window.dispatchEvent(new Event("storage"));
 } catch {
   alert("导入失败");
