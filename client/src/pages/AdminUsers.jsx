@@ -402,24 +402,85 @@ const handleImportUsers = async (e) => {
             </tbody>
           </table>
 {sortedUsers.length > 0 && (
-  <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between" }}>
-    <div>共 {sortedUsers.length} 条，每页 20 条</div>
+  <div
+    style={{
+      padding: "18px 22px 22px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 12
+    }}
+  >
+    <div
+      style={{
+        color: "#64748b",
+        fontSize: 14
+      }}
+    >
+      共 {sortedUsers.length} 条，每页 20 条
+    </div>
 
-    <div>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10
+      }}
+    >
       <button
-       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
         disabled={currentPage === 1}
+        style={{
+          height: 40,
+          padding: "0 16px",
+          background:
+            currentPage === 1
+              ? "#cbd5e1"
+              : "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+          color: "#fff",
+          border: "none",
+          borderRadius: 10,
+          cursor: currentPage === 1 ? "not-allowed" : "pointer",
+          fontSize: 14,
+          fontWeight: 700
+        }}
       >
         上一页
       </button>
 
-      <span style={{ margin: "0 10px" }}>
+      <span
+        style={{
+          minWidth: 86,
+          textAlign: "center",
+          color: "#334155",
+          fontSize: 14,
+          fontWeight: 700
+        }}
+      >
         {currentPage} / {totalPages}
       </span>
 
       <button
-        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+        onClick={() =>
+          setCurrentPage((p) => Math.min(totalPages, p + 1))
+        }
         disabled={currentPage === totalPages}
+        style={{
+          height: 40,
+          padding: "0 16px",
+          background:
+            currentPage === totalPages
+              ? "#cbd5e1"
+              : "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+          color: "#fff",
+          border: "none",
+          borderRadius: 10,
+          cursor:
+            currentPage === totalPages ? "not-allowed" : "pointer",
+          fontSize: 14,
+          fontWeight: 700
+        }}
       >
         下一页
       </button>
