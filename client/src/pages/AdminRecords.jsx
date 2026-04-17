@@ -91,26 +91,13 @@ setRecords(sorted);
   };
 
   const handleSort = (field) => {
-  if (field === "date") {
-    setSortField(field);
-    setSortOrder("desc");
-    return;
-  }
-
   if (sortField === field) {
     setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
   } else {
     setSortField(field);
-
-    if (["steps", "sleep", "water", "weight"].includes(field)) {
-      setSortOrder("desc");
-    } else {
-      setSortOrder("asc");
-    }
+    setSortOrder(field === "date" ? "desc" : "asc");
   }
 };
-
-  
 
   const getSortIcon = (field) => {
     if (sortField === field) {
@@ -135,9 +122,17 @@ setRecords(sorted);
   const list = [...filteredRecords];
 
   list.sort((a, b) => {
-    if (sortField === "date") {
+ if (sortField === "date") {
+  const d1 = new Date(a.date);
+  const d2 = new Date(b.date);
+
+  if (d1.getTime() !== d2.getTime()) {
+    return sortOrder === "asc" ? d1 - d2 : d2 - d1;
+  }
+
   const id1 = String(a._id || "");
   const id2 = String(b._id || "");
+
   return sortOrder === "asc"
     ? id1.localeCompare(id2)
     : id2.localeCompare(id1);
