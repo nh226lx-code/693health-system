@@ -401,7 +401,31 @@ const handleImportUsers = async (e) => {
               })}
             </tbody>
           </table>
+{sortedUsers.length > 0 && (
+  <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between" }}>
+    <div>共 {sortedUsers.length} 条，每页 20 条</div>
 
+    <div>
+      <button
+       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+        disabled={currentPage === 1}
+      >
+        上一页
+      </button>
+
+      <span style={{ margin: "0 10px" }}>
+        {currentPage} / {totalPages}
+      </span>
+
+      <button
+        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+        disabled={currentPage === totalPages}
+      >
+        下一页
+      </button>
+    </div>
+  </div>
+)}
           {sortedUsers.length === 0 && (
             <div style={{ textAlign: "center", padding: 40 }}>
               无数据
