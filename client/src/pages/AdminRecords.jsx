@@ -10,7 +10,7 @@ export default function AdminRecords() {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  const pageSize = 1000;
+  const pageSize = 20;
 
   const cleanEmail = (value) => {
     if (!value) return "";
